@@ -68,6 +68,18 @@ export class UsersController {
    */
 
   /**
+   * GET /users/admin/locals
+   * Lấy danh sách Local Guides (Admin only)
+   */
+  @Get('admin/locals')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @HttpCode(HttpStatus.OK)
+  async getLocalUsers(): Promise<UserResponseDto[]> {
+    return this.usersService.getLocalUsers();
+  }
+
+  /**
    * GET /users/admin/all
    * Lấy danh sách toàn bộ người dùng (Admin only)
    * Query params: page (default: 1), limit (default: 10)

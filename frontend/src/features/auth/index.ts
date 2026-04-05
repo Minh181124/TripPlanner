@@ -11,6 +11,7 @@ export { AuthProvider, useAuth } from './context/AuthContext';
 // Services
 export { authService } from './services/authService';
 export { userService } from './services/userService';
+export { itineraryAdminService } from './services/itineraryAdminService';
 export type {
   UserProfile,
   PaginatedUsers,
@@ -18,6 +19,12 @@ export type {
   ChangePasswordPayload,
   UpdateUserByAdminPayload,
 } from './services/userService';
+export type {
+  Itinerary,
+  ItineraryPlace,
+  ItineraryListResponse,
+  ItineraryMau,
+} from './services/itineraryAdminService';
 
 // Types (re-export từ shared để consumer không cần biết nguồn gốc)
 export type { User, UserRole, AuthContextType } from '@/shared/types/auth.types';

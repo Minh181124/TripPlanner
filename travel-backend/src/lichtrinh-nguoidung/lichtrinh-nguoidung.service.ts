@@ -368,4 +368,63 @@ export class LichtrinhNguoidungService {
       );
     }
   }
+
+  /**
+   * [Admin] Lấy danh sách lịch trình của bất kỳ user nào (bỏ qua kiểm tra ownership)
+   */
+  async getLichtrinhByUserAdmin(nguoidung_id: number) {
+    try {
+      const itineraries = await this.prisma.lichtrinh_nguoidung.findMany({
+        where: { nguoidung_id },
+        include: {
+          lichtrinh_nguoidung_diadiem: {
+            include: { diadiem: true },
+            orderBy: { thutu: 'asc' },
+          },
+          nguoidung: {
+            select: { nguoidung_id: true, ten: true, email: true },
+          },
+        },
+        orderBy: { ngaytao: 'desc' },
+      });
+      return { itineraries, total: itineraries.length };
+    } catch (error) {
+      this.logger.error('Lỗi lấy lịch trình (admin):', error);
+      throw new HttpException(
+        'Lỗi lấy lịch trình: ' + (error as any).message,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * [Admin] Lấy chi tiết lịch trình theo ID (bỏ qua kiểm tra ownership)
+   */
+  async getLichtrinhByIdAdmin(id: number) {
+    try {
+      const itinerary = await this.prisma.lichtrinh_nguoidung.findUnique({
+        where: { lichtrinh_nguoidung_id: id },
+        include: {
+          lichtrinh_nguoidung_diadiem: {
+            include: { diadiem: true },
+            orderBy: { thutu: 'asc' },
+          },
+          nguoidung: {
+            select: { nguoidung_id: true, ten: true, email: true },
+          },
+          tuyen_duong: { orderBy: { ngay_thu_may: 'asc' } },
+        },
+      });
+      if (!itinerary) {
+        throw new HttpException('Lịch trình không tồn tại', HttpStatus.NOT_FOUND);
+      }
+      return itinerary;
+    } catch (error) {
+      this.logger.error('Lỗi lấy chi tiết lịch trình (admin):', error);
+      throw new HttpException(
+        'Lỗi lấy chi tiết: ' + (error as any).message,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }

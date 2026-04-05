@@ -19,6 +19,8 @@ import {
   Compass,
   Heart,
   Settings,
+  UserCheck,
+  MessageSquareWarning,
 } from 'lucide-react';
 import { useAuth } from '@/features/auth';
 
@@ -89,6 +91,16 @@ export function Sidebar() {
             icon: <Users className="w-5 h-5" />,
           },
           {
+            label: 'Quản lý local',
+            href: '/dashboard/locals',
+            icon: <UserCheck className="w-5 h-5" />,
+          },
+          {
+            label: 'Khiếu nại',
+            href: '/dashboard/complaints',
+            icon: <MessageSquareWarning className="w-5 h-5" />,
+          },
+          {
             label: 'Duyệt mẫu tour',
             href: '/dashboard/templates',
             icon: <MapPin className="w-5 h-5" />,
@@ -113,6 +125,11 @@ export function Sidebar() {
 
       case 'local':
         roleItems.push(
+          {
+            label: 'Dashboard',
+            href: '/dashboard',
+            icon: <LayoutDashboard className="w-5 h-5" />,
+          },
           {
             label: 'Tạo tour',
             href: '/dashboard/create-tour',
@@ -173,6 +190,9 @@ export function Sidebar() {
    * Kiểm tra nếu link hiện tại active
    */
   const isActive = (href: string) => {
+    if (href === '/dashboard') {
+      return pathname === '/dashboard';
+    }
     return pathname === href || pathname.startsWith(href + '/');
   };
 

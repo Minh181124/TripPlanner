@@ -60,6 +60,12 @@ class UserService {
     return response as unknown as { message: string };
   }
 
+  /** Lấy danh sách Local Guides (Admin only) */
+  async getLocalUsers(): Promise<UserProfile[]> {
+    const response = await apiClient.get<UserProfile[]>('/users/admin/locals');
+    return response as unknown as UserProfile[];
+  }
+
   /** Lấy danh sách người dùng (Admin only) */
   async getAllUsers(page: number = 1, limit: number = 10): Promise<PaginatedUsers> {
     const response = await apiClient.get<PaginatedUsers>('/users/admin/all', {

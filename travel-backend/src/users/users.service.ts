@@ -90,6 +90,17 @@ export class UsersService {
    */
 
   /**
+   * Lấy danh sách Local Guides (Admin)
+   */
+  async getLocalUsers(): Promise<UserResponseDto[]> {
+    const users = await this.prisma.nguoidung.findMany({
+      where: { vaitro: 'local' },
+      orderBy: { ngaytao: 'desc' },
+    });
+    return users.map(u => this.mapUserToResponse(u));
+  }
+
+  /**
    * Lấy danh sách toàn bộ người dùng (có phân trang)
    */
   async getAllUsers(page: number = 1, limit: number = 10): Promise<PaginatedUsersDto> {
