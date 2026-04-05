@@ -11,7 +11,7 @@ import { useAuth } from '@/features/auth';
  */
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated, isLoading: authLoading, error: authError } = useAuth();
+  const { login, isAuthenticated, isLoading: authLoading, error: authError, user } = useAuth();
 
   const [email, setEmail] = useState('');
   const [matkhau, setMatkhau] = useState('');
@@ -23,9 +23,13 @@ export default function LoginPage() {
    */
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
-      router.push('/dashboard');
+      if (user?.vaitro === 'user') {
+        router.push('/');
+      } else {
+        router.push('/dashboard');
+      }
     }
-  }, [isAuthenticated, authLoading, router]);
+  }, [isAuthenticated, authLoading, router, user]);
 
   /**
    * Xử lý đăng nhập

@@ -12,7 +12,7 @@ import { authService } from '@/features/auth';
  */
 export default function RegisterPage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
 
   const [email, setEmail] = useState('');
   const [matkhau, setMatkhau] = useState('');
@@ -26,9 +26,13 @@ export default function RegisterPage() {
    */
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
-      router.push('/dashboard');
+      if (user?.vaitro === 'user') {
+        router.push('/');
+      } else {
+        router.push('/dashboard');
+      }
     }
-  }, [isAuthenticated, authLoading, router]);
+  }, [isAuthenticated, authLoading, router, user]);
 
   /**
    * Xử lý đăng ký
@@ -54,14 +58,18 @@ export default function RegisterPage() {
 
     try {
       setIsLoading(true);
-      await authService.register({
+      const response = await authService.register({
         email,
         matkhau,
         ten,
       });
       
-      // Redirect to dashboard
-      router.push('/dashboard');
+      // Redirect to correct page based on role
+      if (response.user.vaitro === 'user') {
+        router.push('/');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err: any) {
       setError(err.message || 'Lỗi đăng ký. Vui lòng thử lại');
     } finally {

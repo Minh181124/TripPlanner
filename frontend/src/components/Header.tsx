@@ -9,6 +9,7 @@ import {
   User,
   ChevronDown,
   Zap,
+  Home,
 } from 'lucide-react';
 import { useAuth } from '@/features/auth';
 
@@ -91,6 +92,15 @@ export function Header() {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-4">
+          {/* Back to Home Button */}
+          <button
+            onClick={() => router.push('/')}
+            className="flex items-center gap-2 px-3 py-1.5 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors text-xs font-bold border border-indigo-100"
+          >
+            <Home className="w-4 h-4" />
+            <span className="hidden sm:inline">Trang chủ</span>
+          </button>
+
           {/* Notifications */}
           <button className="relative p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
             <Bell className="w-5 h-5" />

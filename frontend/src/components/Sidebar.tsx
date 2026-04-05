@@ -158,9 +158,9 @@ export function Sidebar() {
       default:
         roleItems.push(
           {
-            label: 'Khám phá',
-            href: '/explore',
-            icon: <Compass className="w-5 h-5" />,
+            label: 'Tổng quan',
+            href: '/dashboard',
+            icon: <LayoutDashboard className="w-5 h-5" />,
           },
           {
             label: 'Chuyến đi của tôi',
@@ -171,17 +171,12 @@ export function Sidebar() {
             label: 'Địa điểm yêu thích',
             href: '/dashboard/saved-places',
             icon: <Heart className="w-5 h-5" />,
-          },
-          {
-            label: 'Cài đặt',
-            href: '/dashboard/settings',
-            icon: <Settings className="w-5 h-5" />,
           }
         );
         break;
     }
 
-    return [...commonItems, ...roleItems];
+    return [...roleItems, ...commonItems];
   };
 
   const menuItems = getMenuItems();

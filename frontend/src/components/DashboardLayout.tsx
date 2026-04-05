@@ -12,10 +12,10 @@ import { Header } from '@/components/Header';
  */
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   /**
-   * Redirect to login if not authenticated
+   * Redirect to login if not authenticated or back to home if standard user
    */
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
