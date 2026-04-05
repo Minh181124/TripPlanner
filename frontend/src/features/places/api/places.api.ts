@@ -23,4 +23,14 @@ export const placesApi = {
     const response = await apiClient.patch<never, Place>(`/places/${id}/status`, { status });
     return response;
   },
+
+  updatePlaceFully: async (id: number, data: Partial<CreatePlaceDto>): Promise<Place> => {
+    const response = await apiClient.put<never, Place>(`/places/admin/${id}`, data);
+    return response;
+  },
+
+  deletePlace: async (id: number): Promise<{ success: boolean; message?: string }> => {
+    const response = await apiClient.delete<never, { success: boolean; message?: string }>(`/places/admin/${id}`);
+    return response;
+  },
 };

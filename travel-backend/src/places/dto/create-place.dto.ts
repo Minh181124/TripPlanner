@@ -14,6 +14,32 @@ export class PlaceImageDto {
   photo_reference?: string;
 }
 
+export class PlaceActivityDto {
+  @ApiProperty({ description: 'Tên hoạt động' })
+  @IsString()
+  ten_hoatdong: string;
+
+  @ApiPropertyOptional({ description: 'Nội dung chi tiết' })
+  @IsOptional()
+  @IsString()
+  noidung_chitiet?: string;
+
+  @ApiPropertyOptional({ description: 'Loại hoạt động' })
+  @IsOptional()
+  @IsString()
+  loai_hoatdong?: string;
+
+  @ApiPropertyOptional({ description: 'Thời điểm lý tưởng' })
+  @IsOptional()
+  @IsString()
+  thoidiem_lytuong?: string;
+
+  @ApiPropertyOptional({ description: 'Giá tham khảo (VNĐ)' })
+  @IsOptional()
+  @IsNumber()
+  gia_thamkhao?: number;
+}
+
 export class PlaceDetailDto {
   @ApiPropertyOptional()
   @IsOptional()
@@ -97,4 +123,11 @@ export class CreatePlaceDto {
   @ValidateNested({ each: true })
   @Type(() => PlaceImageDto)
   images?: PlaceImageDto[];
+
+  @ApiPropertyOptional({ type: [PlaceActivityDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PlaceActivityDto)
+  hoatdong?: PlaceActivityDto[];
 }

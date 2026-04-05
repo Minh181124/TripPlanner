@@ -13,6 +13,14 @@ export interface PlaceImage {
   photo_reference?: string;
 }
 
+export interface PlaceActivity {
+  ten_hoatdong: string;
+  noidung_chitiet?: string;
+  loai_hoatdong?: string;
+  thoidiem_lytuong?: string;
+  gia_thamkhao?: number;
+}
+
 export interface Place {
   diadiem_id: number;
   google_place_id: string;
@@ -30,6 +38,7 @@ export interface Place {
   trang_thai: PlaceStatus;
   chitiet_diadiem?: PlaceDetail[];
   hinhanh_diadiem?: PlaceImage[];
+  hoatdong_diadiem?: PlaceActivity[];
 }
 
 export interface PlacesResponse {
@@ -44,6 +53,7 @@ export interface PlacesResponse {
 
 export interface CreatePlaceDto {
   ten: string;
+  google_place_id?: string;
   diachi?: string;
   quan_huyen?: string;
   tu_khoa?: string;
@@ -53,4 +63,5 @@ export interface CreatePlaceDto {
   giatien?: number;
   chitiet?: PlaceDetail;
   images?: PlaceImage[];
+  hoatdong?: PlaceActivity[];
 }

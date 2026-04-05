@@ -95,6 +95,35 @@ export class PlacesController {
   }
 
   /**
+   * ADMIN: UPDATE PLACE
+   */
+  @ApiOperation({ summary: 'Cập nhật địa điểm toàn quyền (Admin)' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Put('admin/:id')
+  async updatePlaceByAdmin(
+    @Param('id') id: string,
+    @Body() dto: UpdatePlaceDto,
+    @CurrentUser() user: any,
+  ) {
+    const rawPlace = await this.placesService.updatePlace(parseInt(id, 10), dto, user.nguoidung_id, 'admin');
+    return new PlaceResponseEntity(rawPlace as any);
+  }
+
+  /**
+   * ADMIN: DELETE PLACE
+   */
+  @ApiOperation({ summary: 'Xóa địa điểm toàn quyền (Admin)' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Delete('admin/:id')
+  async deletePlaceByAdmin(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.placesService.deletePlace(parseInt(id, 10), user.nguoidung_id, 'admin');
+  }
+
+  /**
    * UPDATE PLACE STATUS (ADMIN ONLY)
    */
   @ApiOperation({ summary: 'Cập nhật trạng thái duyệt địa điểm (Admin)' })

@@ -71,6 +71,21 @@ export class PlacesService {
           });
         }
 
+        if (dto.hoatdong && dto.hoatdong.length > 0) {
+          const hoatdongData = dto.hoatdong.map((hd) => ({
+            diadiem_id: place.diadiem_id,
+            nguoidung_id: userId,
+            ten_hoatdong: hd.ten_hoatdong,
+            noidung_chitiet: hd.noidung_chitiet,
+            loai_hoatdong: hd.loai_hoatdong,
+            thoidiem_lytuong: hd.thoidiem_lytuong,
+            gia_thamkhao: hd.gia_thamkhao,
+          }));
+          await tx.hoatdong_diadiem.createMany({
+            data: hoatdongData,
+          });
+        }
+
         return place;
       });
 
@@ -162,6 +177,7 @@ export class PlacesService {
         const updateData: any = { ...dto };
         delete updateData.chitiet;
         delete updateData.images;
+        delete updateData.hoatdong;
         updateData.ngaycapnhat = new Date();
 
         const updatedPlace = await tx.diadiem.update({
@@ -202,6 +218,22 @@ export class PlacesService {
               photo_reference: img.photo_reference,
             }));
             await tx.hinhanh_diadiem.createMany({ data: imageData });
+          }
+        }
+
+        if (dto.hoatdong) {
+          await tx.hoatdong_diadiem.deleteMany({ where: { diadiem_id: id } });
+          if (dto.hoatdong.length > 0) {
+            const hoatdongData = dto.hoatdong.map((hd) => ({
+              diadiem_id: id,
+              nguoidung_id: userId,
+              ten_hoatdong: hd.ten_hoatdong,
+              noidung_chitiet: hd.noidung_chitiet,
+              loai_hoatdong: hd.loai_hoatdong,
+              thoidiem_lytuong: hd.thoidiem_lytuong,
+              gia_thamkhao: hd.gia_thamkhao,
+            }));
+            await tx.hoatdong_diadiem.createMany({ data: hoatdongData });
           }
         }
 

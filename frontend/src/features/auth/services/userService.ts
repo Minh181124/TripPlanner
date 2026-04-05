@@ -42,13 +42,13 @@ class UserService {
   /** Lấy thông tin profile của chính người dùng */
   async getProfile(): Promise<UserProfile> {
     const response = await apiClient.get<UserProfile>('/users/profile');
-    return response.data;
+    return response as unknown as UserProfile;
   }
 
   /** Cập nhật thông tin cá nhân */
   async updateProfile(payload: UpdateProfilePayload): Promise<UserProfile> {
     const response = await apiClient.patch<UserProfile>('/users/profile', payload);
-    return response.data;
+    return response as unknown as UserProfile;
   }
 
   /** Đổi mật khẩu */
@@ -57,7 +57,7 @@ class UserService {
       '/users/profile/change-password',
       payload
     );
-    return response.data;
+    return response as unknown as { message: string };
   }
 
   /** Lấy danh sách người dùng (Admin only) */
@@ -65,19 +65,19 @@ class UserService {
     const response = await apiClient.get<PaginatedUsers>('/users/admin/all', {
       params: { page, limit },
     });
-    return response.data;
+    return response as unknown as PaginatedUsers;
   }
 
   /** Cập nhật thông tin người dùng (Admin only) */
   async updateUserByAdmin(userId: number, payload: UpdateUserByAdminPayload): Promise<UserProfile> {
     const response = await apiClient.patch<UserProfile>(`/users/admin/${userId}`, payload);
-    return response.data;
+    return response as unknown as UserProfile;
   }
 
   /** Xóa người dùng (Admin only) */
   async deleteUserByAdmin(userId: number): Promise<{ message: string }> {
     const response = await apiClient.delete<{ message: string }>(`/users/admin/${userId}`);
-    return response.data;
+    return response as unknown as { message: string };
   }
 }
 

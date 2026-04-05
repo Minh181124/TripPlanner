@@ -94,8 +94,13 @@ export function Sidebar() {
             icon: <MapPin className="w-5 h-5" />,
           },
           {
-            label: 'Quản lý địa điểm',
+            label: 'Kiểm duyệt địa điểm local',
             href: '/dashboard/places',
+            icon: <MapPin className="w-5 h-5" />,
+          },
+          {
+            label: 'Quản lý địa điểm',
+            href: '/dashboard/manage-places',
             icon: <MapPin className="w-5 h-5" />,
           },
           {

@@ -17,7 +17,7 @@ export const itineraryService = {
   async createItinerary(dto: Record<string, any>) {
     try {
       const response = await apiClient.post('/lichtrinh-nguoidung', dto);
-      return response.data;
+      return response as any;
     } catch (error: any) {
       console.error('[itineraryService] Lỗi tạo lịch trình:', error);
       throw error;
@@ -36,7 +36,7 @@ export const itineraryService = {
 
       const url = `/lichtrinh-nguoidung/user/${userId}${params.toString() ? '?' + params.toString() : ''}`;
       const response = await apiClient.get(url);
-      return response.data.data;
+      return (response as any).data;
     } catch (error: any) {
       console.error('[itineraryService] Lỗi lấy danh sách lịch trình:', error);
       throw error;
@@ -55,7 +55,7 @@ export const itineraryService = {
 
       const url = `/lichtrinh-nguoidung${params.toString() ? '?' + params.toString() : ''}`;
       const response = await apiClient.get(url);
-      return response.data.data;
+      return (response as any).data;
     } catch (error: any) {
       console.error('[itineraryService] Lỗi lấy danh sách lịch trình:', error);
       throw error;
@@ -69,7 +69,7 @@ export const itineraryService = {
   async getItinerary(id: number) {
     try {
       const response = await apiClient.get(`/lichtrinh-nguoidung/${id}`);
-      return response.data.data;
+      return response as any;
     } catch (error: any) {
       console.error('[itineraryService] Lỗi lấy lịch trình:', error);
       throw error;
@@ -83,7 +83,7 @@ export const itineraryService = {
   async updateItinerary(id: number, dto: Record<string, any>) {
     try {
       const response = await apiClient.put(`/lichtrinh-nguoidung/${id}`, dto);
-      return response.data;
+      return response as any;
     } catch (error: any) {
       console.error('[itineraryService] Lỗi cập nhật lịch trình:', error);
       throw error;
@@ -97,7 +97,7 @@ export const itineraryService = {
   async deleteItinerary(id: number) {
     try {
       const response = await apiClient.delete(`/lichtrinh-nguoidung/${id}`);
-      return response.data;
+      return response as any;
     } catch (error: any) {
       console.error('[itineraryService] Lỗi xóa lịch trình:', error);
       throw error;
