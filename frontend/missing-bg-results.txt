@@ -1,0 +1,40 @@
+Found missing bg in D:\thuctaptotnghiep\frontend\src\app\login\page.tsx
+Class: text-4xl font-bold text-white mb-2
+Found missing bg in D:\thuctaptotnghiep\frontend\src\app\login\page.tsx
+Class: text-2xl font-bold text-white
+Found missing bg in D:\thuctaptotnghiep\frontend\src\app\page.tsx
+Class: text-white text-lg font-medium
+Found missing bg in D:\thuctaptotnghiep\frontend\src\app\page.tsx
+Class: max-w-4xl mx-auto text-center text-white
+Found missing bg in D:\thuctaptotnghiep\frontend\src\app\page.tsx
+Class: text-white font-bold mb-4
+Found missing bg in D:\thuctaptotnghiep\frontend\src\app\page.tsx
+Class: text-white font-semibold mb-4
+Found missing bg in D:\thuctaptotnghiep\frontend\src\app\page.tsx
+Class: hover:text-white transition-colors
+Found missing bg in D:\thuctaptotnghiep\frontend\src\app\page.tsx
+Class: hover:text-white transition-colors
+Found missing bg in D:\thuctaptotnghiep\frontend\src\app\page.tsx
+Class: hover:text-white transition-colors
+Found missing bg in D:\thuctaptotnghiep\frontend\src\app\page.tsx
+Class: text-white font-semibold mb-4
+Found missing bg in D:\thuctaptotnghiep\frontend\src\app\page.tsx
+Class: hover:text-white transition-colors
+Found missing bg in D:\thuctaptotnghiep\frontend\src\app\page.tsx
+Class: hover:text-white transition-colors
+Found missing bg in D:\thuctaptotnghiep\frontend\src\app\page.tsx
+Class: hover:text-white transition-colors
+Found missing bg in D:\thuctaptotnghiep\frontend\src\app\page.tsx
+Class: text-white font-semibold mb-4
+Found missing bg in D:\thuctaptotnghiep\frontend\src\app\page.tsx
+Class: hover:text-white transition-colors
+Found missing bg in D:\thuctaptotnghiep\frontend\src\app\page.tsx
+Class: hover:text-white transition-colors
+Found missing bg in D:\thuctaptotnghiep\frontend\src\app\page.tsx
+Class: hover:text-white transition-colors
+Found missing bg in D:\thuctaptotnghiep\frontend\src\app\register\page.tsx
+Class: text-4xl font-bold text-white mb-2
+Found missing bg in D:\thuctaptotnghiep\frontend\src\app\register\page.tsx
+Class: text-2xl font-bold text-white
+Found missing bg in D:\thuctaptotnghiep\frontend\src\components\Header.tsx
+Class: text-xs font-bold text-white

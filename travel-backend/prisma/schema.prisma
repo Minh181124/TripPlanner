@@ -1,0 +1,248 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==========================================
+// 1. NGƯỜI DÙNG & PHÂN QUYỀN
+// ==========================================
+model nguoidung {
+  nguoidung_id        Int                     @id @default(autoincrement())
+  email               String                  @unique @db.VarChar(255)
+  matkhau             String                  @db.VarChar(255)
+  ten                 String?                 @db.VarChar(100)
+  avatar              String?
+  sdt                 String?                 @db.VarChar(20)
+  diachi              String?                 @db.Text
+  vaitro              String                  @default("user") @db.VarChar(20) // admin, local, user
+  trangthai           String?                 @default("active") @db.VarChar(50)
+  ngaytao             DateTime?               @default(now()) @db.Timestamp(6)
+  ngaycapnhat         DateTime?               @default(now()) @db.Timestamp(6)
+  
+  diadiem_donggop     diadiem[]               @relation("diadiem_nguoidung") // Địa điểm do user đóng góp
+  danhgia_diadiem     danhgia_diadiem[]
+  lichtrinh_mau       lichtrinh_mau[]         
+  lichtrinh_nguoidung lichtrinh_nguoidung[]
+  luu_diadiem         luu_diadiem[]
+  hoatdong_diadiem    hoatdong_diadiem[]
+  nguoidung_sothich   nguoidung_sothich[]
+}
+
+// ==========================================
+// 2. ĐỊA ĐIỂM & CHI TIẾT (Master Data)
+// ==========================================
+model diadiem {
+  diadiem_id                  Int                           @id @default(autoincrement())
+  google_place_id             String                        @unique @db.VarChar(255)
+  ten                         String                        @db.VarChar(255)
+  diachi                      String?
+  quan_huyen                  String?                       @db.VarChar(100) // Tối ưu tìm kiếm khu vực
+  tu_khoa                     String?                       @db.Text         // Hỗ trợ tìm kiếm mô tả ngắn
+  lat                         Float?
+  lng                         Float?
+  geom                        Unsupported("geography")?
+  loai                        String?                       @db.VarChar(100)
+  danhgia                     Decimal?                      @db.Decimal(3, 2)
+  soluotdanhgia               Int?
+  giatien                     Int?
+  nguoidung_id                Int?                          // Người đóng góp địa điểm
+  trang_thai                  String?                       @default("APPROVED") @db.VarChar(20) // PENDING, APPROVED, REJECTED
+  ngaycapnhat                 DateTime?                     @default(now()) @db.Timestamp(6)
+  
+  nguoidung                   nguoidung?                    @relation("diadiem_nguoidung", fields: [nguoidung_id], references: [nguoidung_id])
+  chitiet_diadiem             chitiet_diadiem[]
+  danhgia_diadiem             danhgia_diadiem[]
+  hinhanh_diadiem             hinhanh_diadiem[]
+  hoatdong_diadiem            hoatdong_diadiem[]
+  lichtrinh_mau_diadiem       lichtrinh_mau_diadiem[]
+  lichtrinh_nguoidung_diadiem lichtrinh_nguoidung_diadiem[]
+  luu_diadiem                 luu_diadiem[]
+}
+
+model chitiet_diadiem {
+  chitiet_diadiem_id Int       @id @default(autoincrement())
+  diadiem_id         Int?
+  mota_google        String?
+  mota_tonghop       String?
+  sodienthoai        String?   @db.VarChar(20)
+  website            String?
+  giomocua           Json?
+  ngaycapnhat        DateTime? @default(now()) @db.Timestamp(6)
+  diadiem            diadiem?  @relation(fields: [diadiem_id], references: [diadiem_id], onDelete: Cascade)
+}
+
+// ==========================================
+// 3. HOẠT ĐỘNG (Những việc sẽ làm tại địa điểm)
+// ==========================================
+model hoatdong_diadiem {
+  hoatdong_id       Int       @id @default(autoincrement())
+  diadiem_id        Int?
+  nguoidung_id      Int?      
+  ten_hoatdong      String    @db.VarChar(255)
+  noidung_chitiet   String?   @db.Text
+  loai_hoatdong     String?   @db.VarChar(50)
+  thoidiem_lytuong  String?   @db.VarChar(100)
+  gia_thamkhao      Decimal?  @db.Decimal(12, 2)
+  ngaytao           DateTime? @default(now()) @db.Timestamp(6)
+
+  diadiem           diadiem?   @relation(fields: [diadiem_id], references: [diadiem_id], onDelete: Cascade)
+  nguoidung         nguoidung? @relation(fields: [nguoidung_id], references: [nguoidung_id])
+  lichtrinh_hoatdong lichtrinh_hoatdong[]
+}
+
+// ==========================================
+// 4. LỊCH TRÌNH MẪU (Sẵn có từ Local/Admin)
+// ==========================================
+model lichtrinh_mau {
+  lichtrinh_mau_id      Int                     @id @default(autoincrement())
+  nguoidung_id          Int?
+  tieude                String                  @db.VarChar(255)
+  mota                  String?
+  sothich_id            Int?
+  thoigian_dukien       String?                 @db.VarChar(100)
+  tong_khoangcach       Decimal?                @db.Decimal        // Tổng quãng đường từ tất cả tuyen_duong
+  tong_thoigian         Int?                    // Tổng thời gian từ tất cả tuyen_duong (giây)
+  luotthich             Int?                    @default(0)
+  ngaytao               DateTime?               @default(now()) @db.Timestamp(6)
+  
+  nguoidung             nguoidung?              @relation(fields: [nguoidung_id], references: [nguoidung_id])
+  sothich               sothich?                @relation(fields: [sothich_id], references: [sothich_id])
+  lichtrinh_mau_diadiem lichtrinh_mau_diadiem[]
+  tuyen_duong           tuyen_duong[]           @relation("lichtrinh_mau_routes")
+}
+
+model lichtrinh_mau_diadiem {
+  id               Int            @id @default(autoincrement())
+  lichtrinh_mau_id Int?
+  diadiem_id       Int?
+  thutu            Int?
+  ngay_thu_may     Int            @default(1) // Hỗ trợ chia ngày cho tour mẫu
+  thoigian_den     DateTime?      @db.Time(6)
+  thoiluong        Int?
+  ghichu           String?
+  
+  diadiem          diadiem?       @relation(fields: [diadiem_id], references: [diadiem_id], onDelete: Cascade)
+  lichtrinh_mau    lichtrinh_mau? @relation(fields: [lichtrinh_mau_id], references: [lichtrinh_mau_id], onDelete: Cascade)
+}
+
+// ==========================================
+// 5. LỊCH TRÌNH NGƯỜI DÙNG (Cá nhân hóa)
+// ==========================================
+model lichtrinh_nguoidung {
+  lichtrinh_nguoidung_id Int       @id @default(autoincrement())
+  nguoidung_id           Int?
+  tieude                 String    @db.VarChar(255)
+  ngaybatdau             DateTime? @db.Date
+  ngayketthuc            DateTime? @db.Date
+  trangthai              String?   @default("planning") @db.VarChar(50)
+  ngaytao                DateTime? @default(now()) @db.Timestamp(6)
+  
+  nguoidung              nguoidung? @relation(fields: [nguoidung_id], references: [nguoidung_id], onDelete: Cascade)
+  lichtrinh_nguoidung_diadiem lichtrinh_nguoidung_diadiem[]
+  tuyen_duong            tuyen_duong[] @relation("lichtrinh_nguoidung_routes")
+  lichtrinh_hoatdong     lichtrinh_hoatdong[]
+}
+
+model lichtrinh_nguoidung_diadiem {
+  id                     Int                  @id @default(autoincrement())
+  lichtrinh_nguoidung_id Int?
+  diadiem_id             Int?
+  thutu                  Int?
+  ngay_thu_may           Int                  @default(1) // Xác định điểm thuộc ngày nào
+  thoigian_den           DateTime?            @db.Time(6)
+  thoiluong              Int?
+  ghichu                 String?
+  
+  diadiem                diadiem?             @relation(fields: [diadiem_id], references: [diadiem_id], onDelete: Cascade)
+  lichtrinh_nguoidung    lichtrinh_nguoidung? @relation(fields: [lichtrinh_nguoidung_id], references: [lichtrinh_nguoidung_id], onDelete: Cascade)
+}
+
+// ==========================================
+// 6. TUYẾN ĐƯỜNG (Chia theo chặng A -> B)
+// ==========================================
+// Tuyến đường (Chặng A -> B) - Support cả lichtrinh_mau (template) và lichtrinh_nguoidung (personal)
+model tuyen_duong {
+  tuyen_duong_id         Int                  @id @default(autoincrement())
+  lichtrinh_mau_id       Int?                 // For template routes
+  lichtrinh_nguoidung_id Int?                 // For personal routes
+  diadiem_batdau_id      Int?                 // ID điểm A
+  diadiem_ketthuc_id     Int?                 // ID điểm B
+  polyline               String?              @db.Text // Chuỗi mã hóa để vẽ lên bản đồ
+  phuongtien             String?              @default("car") @db.VarChar(50) // car, walk, bike, bus
+  tong_khoangcach        Decimal?             @db.Decimal // Quãng đường (km)
+  tong_thoigian          Int?                 // Thời gian (giây)
+  ngay_thu_may           Int                  @default(1) // Ngày thứ mấy
+  thutu                  Int?                 // Thứ tự chặng trong ngày
+  ngaytao                DateTime?            @default(now()) @db.Timestamp(6)
+  
+  lichtrinh_mau          lichtrinh_mau?       @relation("lichtrinh_mau_routes", fields: [lichtrinh_mau_id], references: [lichtrinh_mau_id], onDelete: Cascade)
+  lichtrinh_nguoidung    lichtrinh_nguoidung? @relation("lichtrinh_nguoidung_routes", fields: [lichtrinh_nguoidung_id], references: [lichtrinh_nguoidung_id], onDelete: Cascade)
+}
+
+// ==========================================
+// 7. BẢNG PHỤ & TƯƠNG TÁC
+// ==========================================
+model lichtrinh_hoatdong {
+  id                     Int      @id @default(autoincrement())
+  lichtrinh_nguoidung_id Int
+  hoatdong_id            Int
+  da_hoan_thanh          Boolean  @default(false) // Check-list trạng thái thực hiện
+
+  hoatdong               hoatdong_diadiem    @relation(fields: [hoatdong_id], references: [hoatdong_id], onDelete: Cascade)
+  lichtrinh_nguoidung    lichtrinh_nguoidung @relation(fields: [lichtrinh_nguoidung_id], references: [lichtrinh_nguoidung_id], onDelete: Cascade)
+}
+
+model sothich {
+  sothich_id        Int                 @id @default(autoincrement())
+  ten               String              @db.VarChar(100)
+  mota              String?
+  lichtrinh_mau     lichtrinh_mau[]
+  nguoidung_sothich nguoidung_sothich[]
+}
+
+model nguoidung_sothich {
+  id            Int       @id @default(autoincrement())
+  nguoidung_id  Int?
+  sothich_id    Int?
+  nguoidung     nguoidung? @relation(fields: [nguoidung_id], references: [nguoidung_id], onDelete: Cascade)
+  sothich       sothich?   @relation(fields: [sothich_id], references: [sothich_id], onDelete: Cascade)
+}
+
+model danhgia_diadiem {
+  danhgia_diadiem_id Int        @id @default(autoincrement())
+  nguoidung_id       Int?
+  diadiem_id         Int?
+  sosao              Int?
+  noidung            String?
+  ngaytao            DateTime?  @default(now()) @db.Timestamp(6)
+  diadiem            diadiem?   @relation(fields: [diadiem_id], references: [diadiem_id], onDelete: Cascade)
+  nguoidung          nguoidung? @relation(fields: [nguoidung_id], references: [nguoidung_id])
+}
+
+model hinhanh_diadiem {
+  hinhanh_diadiem_id Int      @id @default(autoincrement())
+  diadiem_id         Int?
+  photo_reference    String?
+  url                String?
+  diadiem            diadiem? @relation(fields: [diadiem_id], references: [diadiem_id], onDelete: Cascade)
+}
+
+model luu_diadiem {
+  luu_diadiem_id Int       @id @default(autoincrement())
+  nguoidung_id   Int?
+  diadiem_id     Int?
+  ngaytao        DateTime? @default(now()) @db.Timestamp(6)
+  diadiem        diadiem?  @relation(fields: [diadiem_id], references: [diadiem_id], onDelete: Cascade)
+  nguoidung      nguoidung? @relation(fields: [nguoidung_id], references: [nguoidung_id], onDelete: Cascade)
+}
+
+model spatial_ref_sys {
+  srid      Int     @id
+  auth_name String? @db.VarChar(256)
+  auth_srid Int?
+  srtext    String? @db.VarChar(2048)
+  proj4text String? @db.VarChar(2048)
+}

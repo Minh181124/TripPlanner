@@ -1,0 +1,9 @@
+# Frontend Tailwind and FSD Rules
+
+This project uses Feature-Sliced Design (FSD) architecture where components are grouped into features, entities, shared, etc.
+
+## Tailwind CSS Rules
+1. **Global Source Pattern**: `tailwind.config.ts` MUST always include `'./src/**/*.{js,ts,jsx,tsx,mdx}'` in its `content` array. Do NOT revert it to specific folders like `app/` or `components/`. If you restrict the paths, Tailwind will silently drop CSS for FSD modules, causing "white on white" UI bugs where `text-[color]` works but `bg-[color]` fails.
+2. **Component Backgrounds**: Always verify that elements with `text-white` or light text colors either have an explicitly defined dark background (`bg-indigo-600`, `bg-slate-900`, etc.) in the same `className` OR are guaranteed to be placed inside a container with a dark background.
+3. **Contrast Verification**: Never use `text-white` on transparent containers unless explicitly placing them over images or gradient backgrounds.
+4. **Tailwind v3 Syntax ONLY**: This project explicitly uses Tailwind CSS **v3** (3.4.19). NEVER use Tailwind v4 syntax such as `bg-linear-to-*` or new v4 utility configurations. Always use v3 syntax for gradients: `bg-gradient-to-r`, `bg-gradient-to-br`, etc. Using v4 syntax will cause Tailwind to drop the class, rendering backgrounds transparent or breaking layouts.

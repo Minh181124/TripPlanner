@@ -1,0 +1,21 @@
+{
+  "name": "thuctaptotnghiep",
+  "version": "1.0.0",
+  "description": "1. [Yêu Cầu Hệ Thống](#yêu-cầu-hệ-thống)\r 2. [Hướng Dẫn Tạo Database trên pgAdmin](#hướng-dẫn-tạo-database-trên-pgadmin)\r 3. [Cấu Hình Biến Môi Trường](#cấu-hình-biến-môi-trường)\r 4. [Triển Khai Schema với Prisma](#triển-khai-schema-với-prisma)\r 5. [Khởi Chạy Dự Án](#khởi-chạy-dự-án)\r 6. [Xử Lý Lỗi (Troubleshooting)](#xử-lý-lỗi-troubleshooting)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Minh181124/TravelPlanner.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Minh181124/TravelPlanner/issues"
+  },
+  "homepage": "https://github.com/Minh181124/TravelPlanner#readme"
+}
