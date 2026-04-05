@@ -73,14 +73,8 @@ export class MapService {
   }
 
   async getGoongPlaceDetail(placeId: string) {
-    return {
-      place_id: placeId,
-      ten: '',
-      diachi: '',
-      lat: null,
-      lng: null,
-      loai: 'place',
-    };
+    if (!placeId) return null;
+    return this.goongMapProvider.fetchPlaceDetail(placeId);
   }
 
   async geocodeAddress(address: string) {

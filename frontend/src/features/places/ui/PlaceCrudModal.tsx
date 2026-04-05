@@ -5,7 +5,7 @@ import { Place, CreatePlaceDto, PlaceActivity, PlaceImage } from '../model/place
 import { placesApi } from '../api/places.api';
 import { mapApi, AutocompletePrediction } from '../../map/api/map.api';
 import toast from 'react-hot-toast';
-import { X, Plus, Trash2, Loader, Save, MapPin } from 'lucide-react';
+import { X, Plus, Trash2, Loader, Save, MapPin, Search } from 'lucide-react';
 
 interface PlaceCrudModalProps {
   place: Place | null;
@@ -39,20 +39,21 @@ export function PlaceCrudModal({ place, onClose, onSuccess }: PlaceCrudModalProp
   });
 
   // Autocomplete State
+  const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState<AutocompletePrediction[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFetchingGoong, setIsFetchingGoong] = useState(false);
   
   // Debounce logic for Autocomplete
   useEffect(() => {
-    if (!formData.ten || formData.ten.length < 2 || isEditing) {
+    if (!searchQuery || searchQuery.length < 2) {
       setSuggestions([]);
       return;
     }
 
     const timer = setTimeout(async () => {
       try {
-        const results = await mapApi.autocomplete(formData.ten as string);
+        const results = await mapApi.autocomplete(searchQuery);
         setSuggestions(results);
         if (results.length > 0) {
            setShowSuggestions(true);
@@ -63,10 +64,11 @@ export function PlaceCrudModal({ place, onClose, onSuccess }: PlaceCrudModalProp
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [formData.ten, isEditing]);
+  }, [searchQuery]);
 
   const handleSelectSuggestion = async (suggestion: AutocompletePrediction) => {
     setShowSuggestions(false);
+    setSearchQuery(''); // Xóa nội dung tìm kiếm sau khi chọn
     setIsFetchingGoong(true);
     setFormData(prev => ({ ...prev, ten: suggestion.description }));
 
@@ -270,19 +272,20 @@ export function PlaceCrudModal({ place, onClose, onSuccess }: PlaceCrudModalProp
           {/* TAB 1: GENERAL */}
           {activeTab === 'general' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="md:col-span-2 space-y-2 relative">
-                <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                  Tên địa điểm <span className="text-red-500">*</span>
+              <div className="md:col-span-2 space-y-2 relative bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
+                <label className="flex items-center gap-2 text-sm font-semibold text-indigo-700">
+                  <Search className="w-4 h-4" />
+                  Tìm kiếm địa điểm (Auto-fill bằng Goong Maps)
                   {isFetchingGoong && <Loader className="w-4 h-4 text-indigo-500 animate-spin" />}
                 </label>
                 <div className="relative">
                   <input 
-                    type="text" name="ten" value={formData.ten} onChange={handleChange}
+                    type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                     onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
                     onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                     autoComplete="off"
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
-                    placeholder="Nhập tên để tìm kiếm trên Goong Maps..."
+                    className="w-full px-4 py-2 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all placeholder:text-indigo-300"
+                    placeholder="Gõ tên để tự động điền các thông tin bên dưới..."
                   />
                   {showSuggestions && suggestions.length > 0 && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
@@ -294,14 +297,23 @@ export function PlaceCrudModal({ place, onClose, onSuccess }: PlaceCrudModalProp
                         >
                           <MapPin className="w-5 h-5 text-indigo-500 mt-0.5 shrink-0" />
                           <div className="flex flex-col">
-                            <span className="font-medium text-slate-800 text-sm">{s.structured_formatting.main_text}</span>
-                            <span className="text-xs text-slate-500">{s.structured_formatting.secondary_text}</span>
+                            <span className="font-medium text-slate-800 text-sm">{s.main_text}</span>
+                            <span className="text-xs text-slate-500">{s.secondary_text}</span>
                           </div>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
+              </div>
+
+              <div className="md:col-span-2 space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Tên địa điểm <span className="text-red-500">*</span></label>
+                <input 
+                  type="text" name="ten" value={formData.ten} onChange={handleChange}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                  placeholder="VD: Chợ Bến Thành"
+                />
               </div>
               <div className="md:col-span-2 space-y-2">
                 <label className="text-sm font-semibold text-slate-700">Địa chỉ <span className="text-red-500">*</span></label>

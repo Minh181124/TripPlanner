@@ -1,22 +1,14 @@
 import apiClient from '@/shared/api/apiClient';
 
 export interface AutocompletePrediction {
-  description: string;
-  matched_substrings: any[];
   place_id: string;
-  reference: string;
-  structured_formatting: {
-    main_text: string;
-    main_text_matched_substrings: any[];
-    secondary_text: string;
-  };
-  has_children: boolean;
-  plus_code: {
-    compound_code: string;
-    global_code: string;
-  };
-  terms: any[];
-  types: string[];
+  description: string;
+  main_text: string;
+  secondary_text: string;
+  lat: number | null;
+  lng: number | null;
+  ten: string;
+  diachi: string;
 }
 
 export interface PlaceDetailRaw {
@@ -50,9 +42,9 @@ export const mapApi = {
     if (lat) params.append('lat', lat.toString());
     if (lng) params.append('lng', lng.toString());
 
-    // backend returns { predictions: [...] }
+    // backend MapService maps response into an array directly
     const response = await apiClient.get<never, any>(`/map/autocomplete?${params.toString()}`);
-    return response.predictions || [];
+    return Array.isArray(response) ? response : [];
   },
 
   getAutocompletePlaceDetail: async (place_id: string): Promise<PlaceDetailRaw | null> => {

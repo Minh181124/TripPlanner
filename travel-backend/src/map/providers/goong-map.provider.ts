@@ -46,6 +46,18 @@ export class GoongMapProvider {
     }
   }
 
+  async fetchPlaceDetail(placeId: string) {
+    try {
+      const response = await axios.get(`${this.baseUrl}/Place/Detail`, {
+        params: { place_id: placeId, api_key: this.goongApiKey },
+      });
+      return response.data;
+    } catch (error: any) {
+      this.logger.error(`Goong Place Detail API error: ${error.message}`);
+      throw new HttpException('Failed to get place detail from Goong', HttpStatus.BAD_GATEWAY);
+    }
+  }
+
   async fetchDistanceMatrix(origins: string, destinations: string, vehicle: string) {
     try {
       const response = await axios.get(`${this.baseUrl}/DistanceMatrix`, {
