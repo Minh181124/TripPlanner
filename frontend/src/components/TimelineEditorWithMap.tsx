@@ -20,7 +20,8 @@ import {
   ChevronRight,
   Menu,
   X,
-  GripVertical
+  GripVertical,
+  Trash2
 } from 'lucide-react';
 import MapLibreGL from 'maplibre-gl';
 import Map, { Marker, Source, Layer, ViewState } from 'react-map-gl/maplibre';
@@ -63,6 +64,7 @@ export function TimelineEditorWithMap() {
     updateNumberOfDays,
     setCurrentDay,
     reorderPlacesInDay,
+    removePlaceFromDay,
   } = useItinerary();
   const { calculateTimeline } = useCalculateTimeline();
 
@@ -121,6 +123,7 @@ export function TimelineEditorWithMap() {
   // Drag and Drop State
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [isDragOverDelete, setIsDragOverDelete] = useState(false);
 
   // Drag handlers
   const handleDragStart = (e: React.DragEvent, idx: number) => {
@@ -156,6 +159,31 @@ export function TimelineEditorWithMap() {
       setTimeout(() => handleAutoCalculate(), 100);
     }
     
+    setDraggedIdx(null);
+    setDragOverIdx(null);
+  };
+
+  const handleDeleteDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setIsDragOverDelete(true);
+    // Unset dragOverIdx so reorder doesn't happen if dropped here
+    setDragOverIdx(null);
+  };
+
+  const handleDeleteDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOverDelete(false);
+  };
+
+  const handleDeleteDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOverDelete(false);
+    if (draggedIdx !== null && dayData?.places?.[draggedIdx]) {
+      const placeToRemove = dayData.places[draggedIdx];
+      removePlaceFromDay(currentDay, placeToRemove.instanceId);
+      setTimeout(() => handleAutoCalculate(), 100);
+    }
     setDraggedIdx(null);
     setDragOverIdx(null);
   };
@@ -267,6 +295,27 @@ export function TimelineEditorWithMap() {
     }
   };
 
+  const getCoordinatesFromAutocomplete = async (location: StartLocationSearchResult) => {
+    if (location.place_id) {
+      try {
+        const data: any = await apiClient.get('/map/autocomplete-detail', {
+          params: { place_id: location.place_id }
+        });
+        const loc = data?.result?.geometry?.location;
+        if (loc?.lat && loc?.lng) {
+          return { lat: loc.lat, lng: loc.lng };
+        }
+      } catch (error) {
+        console.error('[TimelineEditorWithMap] Failed to get place details by place_id:', error);
+      }
+    }
+    
+    // Fallback to geocoding if place_id fails or is missing
+    const addressText = location.main_text || location.description || location.diachi || location.ten || '';
+    if (!addressText) return null;
+    return geocodeAddress(addressText);
+  };
+
   const handleSelectStartLocation = async (location: StartLocationSearchResult) => {
     // Get the address text to geocode
     const addressText = 
@@ -281,24 +330,24 @@ export function TimelineEditorWithMap() {
       return;
     }
 
-    console.log('[TimelineEditorWithMap] Geocoding address:', addressText);
+    console.log('[TimelineEditorWithMap] Fetching coordinates for:', addressText);
     
-    // Geocode the address to get accurate coordinates
-    const geocodeResult = await geocodeAddress(addressText);
+    // Fetch exact coordinates
+    const geocodeResult = await getCoordinatesFromAutocomplete(location);
     
     let finalLat = geocodeResult?.lat;
     let finalLng = geocodeResult?.lng;
 
-    // If geocoding fails, log a warning but continue (will set marker at a default location)
+    // If fetch fails, log a warning
     if (!finalLat || !finalLng) {
-      console.warn('[TimelineEditorWithMap] Geocoding failed, coordinates will be null');
+      console.warn('[TimelineEditorWithMap] Coordinate fetch failed, will use fallback coordinates');
     }
 
     // Save to context
     const startLocation: StartLocation = {
       name: location.main_text || location.ten || addressText,
-      lat: finalLat,
-      lng: finalLng,
+      lat: finalLat || 21.0285,
+      lng: finalLng || 105.8542,
     };
 
     console.log('[TimelineEditorWithMap] Selected location:', startLocation);
@@ -351,10 +400,11 @@ export function TimelineEditorWithMap() {
     const addressText = location.main_text || location.description || location.diachi || location.ten || '';
     if (!addressText) return;
 
-    const geocodeResult = await geocodeAddress(addressText);
-    const endLocation: StartLocation = { // Using StartLocation interface for end location as well
+    // Use robust place_id lookup instead of string geocoding
+    const geocodeResult = await getCoordinatesFromAutocomplete(location);
+    const endLocation: StartLocation = { 
       name: location.main_text || location.ten || addressText,
-      lat: geocodeResult?.lat || 21.0285, // Fallback if geocode fails
+      lat: geocodeResult?.lat || 21.0285,
       lng: geocodeResult?.lng || 105.8542,
     };
 
@@ -381,7 +431,12 @@ export function TimelineEditorWithMap() {
 
   // Auto-calculate timeline when dependencies change
   const handleAutoCalculate = useCallback(async () => {
-    if (!dayData?.startLocation || !dayData?.places || dayData.places.length === 0) {
+    if (!dayData?.startLocation) {
+      return;
+    }
+    
+    // Require either places or an endLocation to calculate anything
+    if ((!dayData.places || dayData.places.length === 0) && !dayData.endLocation) {
       return;
     }
 
@@ -411,7 +466,7 @@ export function TimelineEditorWithMap() {
 
   // Fit bounds to include all markers
   const fitMapBounds = useCallback(() => {
-    if (!mapRef.current || !dayData?.places || dayData.places.length === 0) return;
+    if (!mapRef.current || !dayData) return;
 
     const bounds = new MapLibreGL.LngLatBounds();
 
@@ -420,10 +475,17 @@ export function TimelineEditorWithMap() {
       bounds.extend([dayData.startLocation.lng, dayData.startLocation.lat]);
     }
 
+    // Add end location
+    if (dayData.endLocation) {
+      bounds.extend([dayData.endLocation.lng, dayData.endLocation.lat]);
+    }
+
     // Add all places
-    dayData.places.forEach((place) => {
-      bounds.extend([place.lng, place.lat]);
-    });
+    if (dayData.places && dayData.places.length > 0) {
+      dayData.places.forEach((place) => {
+        bounds.extend([place.lng, place.lat]);
+      });
+    }
 
     if (!bounds.isEmpty()) {
       mapRef.current?.fitBounds(bounds, {
@@ -444,14 +506,21 @@ export function TimelineEditorWithMap() {
     );
   }, []);
 
-  // Effect: Auto recalculate when places or startLocation changes
+  // Effect: Auto recalculate when places or locations or modes change
   useEffect(() => {
     const timer = setTimeout(() => {
       handleAutoCalculate();
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [dayData?.places?.length, dayData?.startLocation, handleAutoCalculate]);
+  }, [
+    dayData?.places, 
+    dayData?.startLocation, 
+    dayData?.endLocation, 
+    transportModes, 
+    dayData?.startTime, 
+    handleAutoCalculate
+  ]);
 
   // Click outside to close dropdown
   useEffect(() => {
@@ -518,6 +587,23 @@ export function TimelineEditorWithMap() {
       return sum + distance;
     }, 0);
   }, [travelRoutes]);
+
+  const isSameStartAndEndLocation = useMemo(() => {
+    if (!dayData?.startLocation || !dayData?.endLocation) return false;
+    
+    // Check coordinate distance (tighten tolerance to 0.0005 approx 50m)
+    const isSameCoords = Math.abs(dayData.startLocation.lat - dayData.endLocation.lat) < 0.0005 &&
+                         Math.abs(dayData.startLocation.lng - dayData.endLocation.lng) < 0.0005;
+    
+    // Check if name string is identical (only if they aren't generic defaults)
+    const startName = dayData.startLocation.name?.trim().toLowerCase() || '';
+    const endName = dayData.endLocation.name?.trim().toLowerCase() || '';
+    const isGeneric = startName.includes('khách sạn') || endName.includes('khách sạn');
+    
+    const isSameName = !isGeneric && startName === endName && startName.length > 2;
+    
+    return isSameCoords || isSameName;
+  }, [dayData?.startLocation, dayData?.endLocation]);
 
   const totalDuration = useMemo(() => {
     return travelRoutes.reduce((sum, route) => {
@@ -733,7 +819,7 @@ export function TimelineEditorWithMap() {
                     </div>
 
                     {/* Travel Info Pill for Start -> Place 0 */}
-                    {travelRoutes[0] && (
+                    {travelRoutes[0] && places.length > 0 && (
                       <div className="relative pl-16 py-3">
                         <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/80 backdrop-blur-sm border border-indigo-300/40 rounded-full shadow-sm">
                           <Car className="w-3.5 h-3.5 text-indigo-600" />
@@ -889,7 +975,7 @@ export function TimelineEditorWithMap() {
                 })}
 
                 {/* Final Travel Info Pill (From Last Place to End Location) */}
-                {dayData.endLocation && places.length > 0 && travelRoutes[places.length] && (
+                {dayData.endLocation && travelRoutes[places.length] && (
                   <div className="relative pl-16 py-3">
                     <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/80 backdrop-blur-sm border border-indigo-300/40 rounded-full shadow-sm hover:shadow-md transition-all">
                       <Car className="w-3.5 h-3.5 text-indigo-600" />
@@ -915,7 +1001,7 @@ export function TimelineEditorWithMap() {
                 )}
 
                 {/* End Trip Node */}
-                {places.length > 0 && (
+                {(places.length > 0 || dayData.endLocation) && (
                   <div className="relative mt-2">
                     <div className="relative pl-16">
                       <div className="absolute -left-2 top-0 z-10 transform -translate-x-1">
@@ -927,7 +1013,7 @@ export function TimelineEditorWithMap() {
                         {dayData.endLocation ? (
                           <>🏁 Về đích: <span className="font-bold text-indigo-600 block sm:inline mt-1 sm:mt-0">{dayData.endLocation.name}</span></>
                         ) : (
-                          <>🏁 Kết thúc ngắm cảnh lúc: <span className="font-bold text-slate-800">{places[places.length - 1].departureTime || '---'}</span></>
+                          <>🏁 Kết thúc ngắm cảnh lúc: <span className="font-bold text-slate-800">{places[places.length - 1]?.departureTime || '---'}</span></>
                         )}
                       </div>
                     </div>
@@ -946,6 +1032,31 @@ export function TimelineEditorWithMap() {
             </div>
           )}
         </div>
+
+        {/* Delete Dropzone - Shows only when dragging */}
+        {draggedIdx !== null && (
+          <div 
+            className={`transition-all duration-300 border-t z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] ${
+              isDragOverDelete 
+                ? 'bg-red-50/90 backdrop-blur-md border-red-500 py-8' 
+                : 'bg-white/90 backdrop-blur-md border-slate-200 py-6'
+            } px-4 flex flex-col items-center justify-center gap-3 shrink-0`}
+            onDragOver={handleDeleteDragOver}
+            onDragLeave={handleDeleteDragLeave}
+            onDrop={handleDeleteDrop}
+          >
+            <Trash2 
+              className={`w-10 h-10 ${
+                isDragOverDelete ? 'text-red-500 scale-110 drop-shadow-md' : 'text-slate-400'
+              } transition-all duration-300`} 
+            />
+            <span className={`text-sm md:text-base font-bold ${
+              isDragOverDelete ? 'text-red-600' : 'text-slate-500'
+            }`}>
+              Kéo thả vào đây để xóa địa điểm
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Main Content - Map */}
@@ -979,13 +1090,13 @@ export function TimelineEditorWithMap() {
                 anchor="bottom"
               >
                 <div className="bg-gradient-to-br from-blue-600 to-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg shadow-blue-500/50">
-                  S
+                  {isSameStartAndEndLocation ? 'S/E' : 'S'}
                 </div>
               </Marker>
             )}
 
             {/* End location marker */}
-            {dayData.endLocation && (
+            {dayData.endLocation && !isSameStartAndEndLocation && (
               <Marker
                 longitude={dayData.endLocation.lng}
                 latitude={dayData.endLocation.lat}
@@ -1033,6 +1144,24 @@ export function TimelineEditorWithMap() {
                       'line-opacity': item.isSelected ? 1 : 0.45,
                     }}
                   />
+                  {item.isSelected && (
+                    <Layer
+                      id={`arrow-${item.id}`}
+                      type="symbol"
+                      layout={{
+                        'symbol-placement': 'line',
+                        'symbol-spacing': 80,
+                        'text-field': '▶',
+                        'text-size': 12,
+                        'text-keep-upright': false,
+                      }}
+                      paint={{
+                        'text-color': '#ffffff',
+                        'text-halo-color': '#4f46e5',
+                        'text-halo-width': 1.5,
+                      }}
+                    />
+                  )}
                 </Source>
               );
             })}
@@ -1057,7 +1186,7 @@ export function TimelineEditorWithMap() {
         )}
 
         {/* Trip Summary Widget - Bottom Center */}
-        {hasPlaces && (
+        {(hasPlaces || travelRoutes.length > 0) && (
           <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20">
             <div className="bg-white/95 backdrop-blur-md border border-white/20 rounded-2xl shadow-xl px-6 py-3.5 flex items-center gap-8">
               <div className="flex items-center gap-3">

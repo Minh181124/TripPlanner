@@ -263,7 +263,10 @@ export class MapService {
         },
       };
     } catch (error: any) {
-      if (error.status === 400 || error.status === 404 || error.response?.status === 400 || error.response?.status === 404) {
+      const isRoutingError = error.status === 400 || error.status === 404 || error.status === 502 ||
+                             error.response?.status === 400 || error.response?.status === 404 || error.response?.status === 502;
+                             
+      if (isRoutingError) {
         const distance = Math.sqrt(
           Math.pow(parsedDest.lat - parsedOrigin.lat, 2) + Math.pow(parsedDest.lng - parsedOrigin.lng, 2),
         ) * 111000;

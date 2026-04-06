@@ -195,7 +195,7 @@ export function ItineraryProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const updateDayConfig = useCallback((day: number, config: { startTime?: string; startLocation?: StartLocation }) => {
+  const updateDayConfig = useCallback((day: number, config: { startTime?: string; startLocation?: StartLocation; endLocation?: StartLocation }) => {
     setItinerary((prev) => {
       const newItinerary = { ...prev };
       const dayItinerary = newItinerary.days[day - 1];
@@ -203,6 +203,7 @@ export function ItineraryProvider({ children }: { children: ReactNode }) {
       if (dayItinerary) {
         if (config.startTime !== undefined) dayItinerary.startTime = config.startTime;
         if (config.startLocation !== undefined) dayItinerary.startLocation = config.startLocation;
+        if (config.endLocation !== undefined) dayItinerary.endLocation = config.endLocation;
       }
 
       return newItinerary;

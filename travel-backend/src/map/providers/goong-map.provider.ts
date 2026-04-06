@@ -90,7 +90,8 @@ export class GoongMapProvider {
       return response.data;
     } catch (error: any) {
       this.logger.error(`Goong Direction API error: ${error.message}`);
-      throw new HttpException('Failed to get direction from Goong', HttpStatus.BAD_GATEWAY);
+      const status = error.response?.status || error.status || HttpStatus.BAD_GATEWAY;
+      throw new HttpException('Failed to get direction from Goong', status);
     }
   }
 }

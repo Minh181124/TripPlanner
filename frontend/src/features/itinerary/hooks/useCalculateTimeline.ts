@@ -40,6 +40,12 @@ export function useCalculateTimeline() {
       const baseDate = parse('2000-01-01', 'yyyy-MM-dd', new Date());
       const time = parse(timeStr, 'HH:mm', baseDate);
       const resultDate = addMinutes(time, minutes);
+      
+      // Giới hạn thời gian kết thúc không vượt quá 23:59
+      if (resultDate.getDate() !== time.getDate() || resultDate.getTime() < time.getTime()) {
+        return '23:59';
+      }
+      
       return format(resultDate, 'HH:mm');
     } catch {
       console.error('Error adding minutes:', { timeStr, minutes });
@@ -120,16 +126,19 @@ export function useCalculateTimeline() {
       console.log(`[useCalculateTimeline] 🕐 Calculating timeline for day ${dayNumber}`);
 
       const dayData = itinerary.days[dayNumber - 1];
-      if (!dayData || !dayData.places || dayData.places.length === 0) {
+      if (!dayData) return [];
+      
+      const hasPlaces = dayData.places && dayData.places.length > 0;
+      if (!hasPlaces && !dayData.endLocation) {
         return [];
       }
 
       const startTime = dayData.startTime || '08:00';
-      const startLocation: StartLocation = dayData.startLocation || {
+      const startLocation: StartLocation = dayData.startLocation || (hasPlaces ? {
         name: 'Starting Point',
         lat: dayData.places[0].lat,
         lng: dayData.places[0].lng,
-      };
+      } : { name: 'Unknown', lat: 21.0285, lng: 105.8542 });
 
       const travelRoutes: TravelRoute[] = [];
       let currentTime = startTime;
@@ -184,8 +193,9 @@ export function useCalculateTimeline() {
       }
 
       // Calculate final route back to endLocation if configured
-      if (dayData.endLocation && dayData.places.length > 0) {
-        const vehicle = transportModes[dayData.places.length] || 'car';
+      if (dayData.endLocation && startLocation) {
+        const placesCount = dayData.places?.length || 0;
+        const vehicle = transportModes[placesCount] || 'car';
         try {
           const routes = await getDirectionRoutes(
             prevLocation.lat,
@@ -198,8 +208,8 @@ export function useCalculateTimeline() {
 
           if (routes.length > 0) {
             travelRoutes.push({
-              startIndex: dayData.places.length,
-              endIndex: dayData.places.length + 1,
+              startIndex: placesCount,
+              endIndex: placesCount + 1,
               routes,
               selectedRouteIndex: 0,
             });
