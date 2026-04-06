@@ -23,6 +23,13 @@ export class QueryPlaceDto {
   @IsString()
   trang_thai?: string;
 
+  @IsOptional()
+  mine?: boolean | string;
+
+  @IsOptional()
+  @IsNumber()
+  nguoidung_id?: number;
+
   @ApiPropertyOptional({ default: 1 })
   @IsOptional()
   @Type(() => Number)

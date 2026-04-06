@@ -74,37 +74,55 @@ export function PlaceCrudModal({ place, onClose, onSuccess }: PlaceCrudModalProp
 
     try {
       const detail = await mapApi.getAutocompletePlaceDetail(suggestion.place_id);
+      
+      console.log("Goong Detail:", detail);
+      
       if (detail) {
-        // Prepare new images from Goong
-        const newImages: PlaceImage[] = [];
-        if (detail.photos && detail.photos.length > 0) {
-          const goongKey = process.env.NEXT_PUBLIC_GOONG_API_KEY || '';
-          // Lấy max 3 hình ảnh
-          const topPhotos = detail.photos.slice(0, 3);
-          for (const photo of topPhotos) {
-             newImages.push({
-               photo_reference: photo.photo_reference,
-               url: `https://rsapi.goong.io/Place/Photo?photoreference=${photo.photo_reference}&api_key=${goongKey}`
-             });
+        // Goong API sometimes nests the payload inside `result` depending on Interceptor
+        const placeData = (detail as any).result ? (detail as any).result : detail;
+
+        // Bỏ logic Hình ảnh theo yêu cầu vì API Goong Detail không hỗ trợ array photos
+
+        // Parse Quận/Huyện từ address_components
+        let foundQuanHuyen = '';
+        
+        if (placeData.address_components && placeData.address_components.length > 0) {
+          const districtComp = placeData.address_components.find((c: any) => 
+            c.types.includes('administrative_area_level_2') || 
+            c.types.includes('sublocality_level_1')
+          );
+          if (districtComp) {
+            foundQuanHuyen = districtComp.long_name;
+          }
+        }
+        
+        // Fallback Regex processing
+        if (!foundQuanHuyen && placeData.formatted_address) {
+          const parts = placeData.formatted_address.split(',').map((p: string) => p.trim());
+          // Thường Quận/Huyện ở vị trí kế cuối hoặc chứa chữ Quận/Huyện/Thị xã
+          const districtPart = parts.find((p: string) => /Quận|Huyện|Thị xã|TP|Thành phố/i.test(p) && !/Hồ Chí Minh|Hà Nội|Đà Nẵng|Hải Phòng/i.test(p));
+          if (districtPart) {
+             foundQuanHuyen = districtPart;
+          } else if (parts.length >= 3) {
+             foundQuanHuyen = parts[parts.length - 2]; // guess 2nd to last part
           }
         }
 
         // Auto form fill
         setFormData(prev => ({
           ...prev,
-          ten: detail.name || prev.ten,
-          diachi: detail.formatted_address || prev.diachi,
-          lat: detail.geometry?.location?.lat || prev.lat,
-          lng: detail.geometry?.location?.lng || prev.lng,
-          google_place_id: detail.place_id,
+          ten: placeData.name || placeData.ten || suggestion.description || prev.ten,
+          diachi: placeData.formatted_address || placeData.diachi || prev.diachi,
+          quan_huyen: suggestion.district || foundQuanHuyen || prev.quan_huyen,
+          lat: placeData.geometry?.location?.lat || placeData.lat || prev.lat,
+          lng: placeData.geometry?.location?.lng || placeData.lng || prev.lng,
+          google_place_id: placeData.place_id || suggestion.place_id,
           // Preserve existing details, just overwrite specific fields
           chitiet: {
             ...prev.chitiet,
-            sodienthoai: detail.formatted_phone_number || prev.chitiet?.sodienthoai || '',
-            website: detail.website || prev.chitiet?.website || '',
-          },
-          // If Goong has images, prepend or replace them
-          images: newImages.length > 0 ? newImages : prev.images
+            sodienthoai: placeData.formatted_phone_number || prev.chitiet?.sodienthoai || '',
+            website: placeData.website || prev.chitiet?.website || '',
+          }
         }));
         
         toast.success("Đã tự động điền dữ liệu từ Goong Maps!");
@@ -195,6 +213,20 @@ export function PlaceCrudModal({ place, onClose, onSuccess }: PlaceCrudModalProp
     if (!formData.ten || !formData.diachi) {
       toast.error('Vui lòng nhập Tên và Địa chỉ!');
       return;
+    }
+
+    if (formData.images && formData.images.length > 0) {
+      if (formData.images.some(img => !img.url || img.url.trim() === '')) {
+        toast.error('Vui lòng nhập đầy đủ URL cho các Hình ảnh đã thêm (hoặc xóa nếu không dùng)!');
+        return;
+      }
+    }
+
+    if (formData.hoatdong && formData.hoatdong.length > 0) {
+      if (formData.hoatdong.some(hd => !hd.ten_hoatdong || hd.ten_hoatdong.trim() === '')) {
+        toast.error('Vui lòng nhập ít nhất Tên hoạt động cho các Hoạt động đã thêm (hoặc xóa nếu không dùng)!');
+        return;
+      }
     }
 
     try {
@@ -507,7 +539,7 @@ export function PlaceCrudModal({ place, onClose, onSuccess }: PlaceCrudModalProp
                       <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-slate-600">Đơn giá (VNĐ)</label>
                         <input 
-                          type="number" value={hd.gia_thamkhao || ''} onChange={(e) => updateActivity(index, 'gia_thamkhao', e.target.value)}
+                          type="number" value={hd.gia_thamkhao ?? ''} onChange={(e) => updateActivity(index, 'gia_thamkhao', e.target.value)}
                           className="w-full px-3 py-2 text-sm border border-slate-300 rounded-md outline-none focus:ring-2 focus:ring-indigo-500"
                           placeholder="VD: 50000"
                         />

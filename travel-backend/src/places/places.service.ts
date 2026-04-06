@@ -18,7 +18,7 @@ export class PlacesService {
   /**
    * 1. CREATE PLACE
    */
-  async createPlace(dto: CreatePlaceDto, userId: number) {
+  async createPlace(dto: CreatePlaceDto, userId: number, userRole?: string) {
     let { lat, lng } = dto;
 
     if (!lat || !lng) {
@@ -43,7 +43,7 @@ export class PlacesService {
             loai: dto.loai,
             giatien: dto.giatien,
             nguoidung_id: userId,
-            trang_thai: 'PENDING',
+            trang_thai: userRole === 'admin' ? 'APPROVED' : 'PENDING',
           },
         });
 
@@ -100,7 +100,7 @@ export class PlacesService {
    * 2. FIND ALL PLACES
    */
   async findAllPlaces(query: QueryPlaceDto) {
-    const { keyword, loai, quan_huyen, trang_thai, page = 1, limit = 10 } = query;
+    const { keyword, loai, quan_huyen, trang_thai, nguoidung_id, page = 1, limit = 10 } = query;
     const skip = (page - 1) * limit;
 
     const where: Prisma.diadiemWhereInput = {};
@@ -115,6 +115,7 @@ export class PlacesService {
     if (loai) where.loai = loai;
     if (quan_huyen) where.quan_huyen = quan_huyen;
     if (trang_thai) where.trang_thai = trang_thai;
+    if (nguoidung_id) where.nguoidung_id = nguoidung_id;
 
     const [places, total] = await Promise.all([
       this.prisma.diadiem.findMany({
@@ -124,6 +125,7 @@ export class PlacesService {
         include: {
           chitiet_diadiem: true,
           hinhanh_diadiem: true,
+          hoatdong_diadiem: true,
         },
         orderBy: { ngaycapnhat: 'desc' },
       }),
@@ -179,6 +181,10 @@ export class PlacesService {
         delete updateData.images;
         delete updateData.hoatdong;
         updateData.ngaycapnhat = new Date();
+
+        if (role !== 'admin') {
+          updateData.trang_thai = 'PENDING';
+        }
 
         const updatedPlace = await tx.diadiem.update({
           where: { diadiem_id: id },
@@ -254,10 +260,19 @@ export class PlacesService {
     const place = await this.prisma.diadiem.findUnique({ where: { diadiem_id: id } });
     if (!place) throw new NotFoundException();
 
-    if (place.nguoidung_id !== userId && role !== 'admin') {
-      throw new ForbiddenException('Bạn không có quyền xóa địa điểm này');
+    if (role !== 'admin') {
+      if (place.nguoidung_id !== userId) {
+        throw new ForbiddenException('Bạn không có quyền xóa địa điểm này');
+      }
+      // Local User -> PENDING_DELETE
+      await this.prisma.diadiem.update({
+        where: { diadiem_id: id },
+        data: { trang_thai: 'PENDING_DELETE', ngaycapnhat: new Date() },
+      });
+      return { success: true, message: 'Đã gửi yêu cầu xóa địa điểm' };
     }
 
+    // Admin -> Hard Delete
     await this.prisma.diadiem.delete({
       where: { diadiem_id: id },
     });

@@ -141,8 +141,8 @@ export function Sidebar() {
             icon: <Package className="w-5 h-5" />,
           },
           {
-            label: 'Đóng góp địa điểm',
-            href: '/dashboard/places/new',
+            label: 'Địa điểm của tôi',
+            href: '/dashboard/my-places',
             icon: <MapPin className="w-5 h-5" />,
           },
           {

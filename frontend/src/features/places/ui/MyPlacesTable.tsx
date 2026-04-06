@@ -8,10 +8,10 @@ import type { Place } from '../model/places.types';
 import { PlaceCrudModal } from './PlaceCrudModal';
 import toast from 'react-hot-toast';
 
-export function ManagePlacesTable() {
+export function MyPlacesTable() {
   const { places, loading, error, page, totalPages, setPage, refresh } = usePlaces({ 
     initialLimit: 10,
-    // We fetch ALL statuses so we don't pass statusFilter by default
+    mine: true,
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -31,7 +31,7 @@ export function ManagePlacesTable() {
     if (confirm('Bạn có chắc chắn muốn xóa địa điểm này vĩnh viễn không?')) {
       try {
         await placesApi.deletePlace(id);
-        toast.success('Đã xóa địa điểm thành công');
+        toast.success('Đã gửi yêu cầu xóa địa điểm!');
         refresh();
       } catch (err: any) {
         toast.error(err?.message || 'Lỗi khi xóa địa điểm');
@@ -59,8 +59,8 @@ export function ManagePlacesTable() {
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">Danh Sách Địa Điểm</h2>
-          <p className="text-sm text-slate-500">Toàn quyền tạo, cập nhật thông tin chi tiết và xóa địa điểm.</p>
+          <h2 className="text-xl font-bold text-slate-800">Địa Điểm Của Tôi</h2>
+          <p className="text-sm text-slate-500">Quản lý đóng góp của bạn. Sửa đổi sẽ chờ duyệt, xóa sẽ tạo yêu cầu xóa.</p>
         </div>
         
         <button 
@@ -116,7 +116,7 @@ export function ManagePlacesTable() {
                       <span className={`text-xs font-bold px-2 py-1 rounded-md ${
                         place.trang_thai === 'APPROVED' ? 'bg-green-100 text-green-700' : 
                         place.trang_thai === 'PENDING' ? 'bg-yellow-100 text-yellow-700' : 
-                        place.trang_thai === 'PENDING_DELETE' ? 'bg-slate-200 text-slate-700 line-through decoration-slate-400' : 'bg-red-100 text-red-700'
+                        place.trang_thai === 'PENDING_DELETE' ? 'bg-slate-100 text-slate-700' : 'bg-red-100 text-red-700'
                       }`}>
                          {place.trang_thai}
                       </span>
@@ -142,7 +142,7 @@ export function ManagePlacesTable() {
                       <button 
                         onClick={() => handleDelete(place.diadiem_id)}
                         className="p-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-md transition-colors"
-                        title="Xóa vĩnh viễn"
+                        title="Yêu cầu xóa"
                       >
                         <Trash2 size={18} strokeWidth={2.5} />
                       </button>

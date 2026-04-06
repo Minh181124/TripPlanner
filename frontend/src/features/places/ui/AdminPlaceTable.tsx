@@ -70,6 +70,12 @@ export function AdminPlaceTable() {
           >
             Từ chối
           </button>
+          <button 
+            onClick={() => setStatus('PENDING_DELETE')}
+            className={`px-4 py-1.5 rounded-md text-sm transition-colors ${status === 'PENDING_DELETE' ? 'bg-white shadow text-slate-700' : 'text-slate-600'}`}
+          >
+            Yêu cầu xóa
+          </button>
         </div>
       </div>
 
@@ -147,10 +153,12 @@ export function AdminPlaceTable() {
                         </button>
                       </div>
                     ) : (
-                      <span className={`text-xs font-bold px-2 py-1 rounded-md ${
-                        place.trang_thai === 'APPROVED' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      <span className={`text-xs font-bold px-2.5 py-1.5 rounded-md ${
+                        place.trang_thai === 'APPROVED' ? 'bg-green-100 text-green-700' : 
+                        place.trang_thai === 'PENDING_DELETE' ? 'bg-slate-100 text-slate-700' : 'bg-red-100 text-red-700'
                       }`}>
-                         {place.trang_thai}
+                         {place.trang_thai === 'APPROVED' ? 'Đã Duyệt' : 
+                          place.trang_thai === 'PENDING_DELETE' ? 'Yêu Cầu Xóa' : 'Từ Chối'}
                       </span>
                     )}
                   </td>

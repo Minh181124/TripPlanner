@@ -25,12 +25,12 @@ export const placesApi = {
   },
 
   updatePlaceFully: async (id: number, data: Partial<CreatePlaceDto>): Promise<Place> => {
-    const response = await apiClient.put<never, Place>(`/places/admin/${id}`, data);
+    const response = await apiClient.put<never, Place>(`/places/${id}`, data);
     return response;
   },
 
   deletePlace: async (id: number): Promise<{ success: boolean; message?: string }> => {
-    const response = await apiClient.delete<never, { success: boolean; message?: string }>(`/places/admin/${id}`);
+    const response = await apiClient.delete<never, { success: boolean; message?: string }>(`/places/${id}`);
     return response;
   },
 };

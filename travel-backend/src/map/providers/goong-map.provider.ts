@@ -20,6 +20,7 @@ export class GoongMapProvider {
       const params: any = {
         input: keyword,
         api_key: this.goongApiKey,
+        more_compound: true,
       };
 
       if (lat && lng) {

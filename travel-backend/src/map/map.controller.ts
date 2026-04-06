@@ -17,6 +17,7 @@ export class MapController {
       searchDto.keyword,
       searchDto.lat,
       searchDto.lng,
+      searchDto.loai,
     );
   }
 

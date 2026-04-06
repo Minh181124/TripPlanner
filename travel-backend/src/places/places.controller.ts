@@ -38,7 +38,7 @@ export class PlacesController {
   @Post()
   @HttpCode(201)
   async createPlace(@Body() dto: CreatePlaceDto, @CurrentUser() user: any) {
-    const rawPlace = await this.placesService.createPlace(dto, user.nguoidung_id);
+    const rawPlace = await this.placesService.createPlace(dto, user.nguoidung_id, user.vaitro);
     return new PlaceResponseEntity(rawPlace as any);
   }
 
@@ -49,6 +49,23 @@ export class PlacesController {
   @ApiResponse({ status: 200, description: 'Success' })
   @Get()
   async findAll(@Query() query: QueryPlaceDto) {
+    const { items, meta } = await this.placesService.findAllPlaces(query);
+    return {
+      items: items.map((p) => new PlaceResponseEntity(p as any)),
+      meta,
+    };
+  }
+
+  /**
+   * FIND MY PLACES
+   */
+  @ApiOperation({ summary: 'Lấy danh sách địa điểm của tôi' })
+  @ApiResponse({ status: 200, description: 'Success' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  async findMyPlaces(@Query() query: QueryPlaceDto, @CurrentUser() user: any) {
+    query.nguoidung_id = user.nguoidung_id;
     const { items, meta } = await this.placesService.findAllPlaces(query);
     return {
       items: items.map((p) => new PlaceResponseEntity(p as any)),

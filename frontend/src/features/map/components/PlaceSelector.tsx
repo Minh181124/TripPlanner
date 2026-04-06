@@ -28,18 +28,18 @@ interface PlaceSearchResult {
   is_internal?: boolean;
   chitiet_diadiem?: any[];
   hoatdong_diadiem?: any[];
-  thumbnail?: string;
-  image_url?: string;
+  hinhanh_diadiem?: { url: string }[];
+  danhgia?: number;
+  giatien?: number;
 }
 
 const PLACE_TYPES = [
   { value: 'all', label: '🌍 Tất cả', icon: 'all' },
-  { value: 'nhahang', label: '🍽️ Nhà hàng', icon: 'restaurant' },
+  { value: 'restaurant', label: '🍽️ Nhà hàng', icon: 'restaurant' },
   { value: 'cafe', label: '☕ Cà phê', icon: 'cafe' },
-  { value: 'khachsan', label: '🏨 Khách sạn', icon: 'hotel' },
-  { value: 'thamquan', label: '🎯 Tham quan', icon: 'attraction' },
-  { value: 'shopmart', label: '🛍️ Mua sắm', icon: 'shopping' },
-  { value: 'entertainment', label: '🎮 Giải trí', icon: 'entertainment' },
+  { value: 'lodging', label: '🏨 Khách sạn', icon: 'hotel' },
+  { value: 'tourist_attraction', label: '🎯 Tham quan', icon: 'attraction' },
+  { value: 'store', label: '🛍️ Mua sắm', icon: 'shopping' },
 ];
 
 const PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" font-size="16" fill="%239ca3af" text-anchor="middle" dominant-baseline="middle" font-family="system-ui"%3ENo Image%3C/text%3E%3C/svg%3E';
@@ -65,13 +65,13 @@ export function PlaceSelector() {
       setError(null);
 
       let keyword = searchQuery.trim();
+      
+      const params: any = { keyword, lat: currentLat, lng: currentLng };
       if (typeFilter !== 'all') {
-        keyword = searchQuery.trim() ? `${searchQuery} ${typeFilter}` : typeFilter;
+        params.loai = typeFilter;
       }
 
-      const data = await apiClient.get('/map/search', {
-        params: { keyword, lat: currentLat, lng: currentLng },
-      });
+      const data = await apiClient.get('/map/search', { params });
 
       const results = Array.isArray(data) ? data : (data?.data || []);
       setPlaces(results);
@@ -232,9 +232,9 @@ export function PlaceSelector() {
                   className="group cursor-pointer bg-white rounded-lg overflow-hidden border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 flex flex-col"
                 >
                   <div className="relative w-full h-40 bg-slate-100 overflow-hidden">
-                    {place.thumbnail || place.image_url ? (
+                    {place.hinhanh_diadiem?.[0]?.url ? (
                       <img
-                        src={place.thumbnail || place.image_url}
+                        src={place.hinhanh_diadiem?.[0]?.url}
                         alt={place.ten}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMAGE; }}
@@ -254,10 +254,20 @@ export function PlaceSelector() {
                       <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
                       <p className="text-xs text-slate-500 line-clamp-1">{place.diachi || place.quan_huyen || 'Không xác định'}</p>
                     </div>
-                    <div className="mb-3">
+                    <div className="mb-3 flex items-center gap-2">
                       <span className="inline-block px-2 py-1 bg-indigo-50 text-indigo-700 text-xs font-medium rounded-full">
-                        {place.loai || 'Địa điểm'}
+                        {PLACE_TYPES.find(t => t.value === place.loai)?.label.replace(/🌍 |🍽️ |☕ |🏨 |🎯 |🛍️ |🎮 /g, '') || place.loai || 'Địa điểm'}
                       </span>
+                      {place.danhgia && (
+                        <span className="text-xs font-medium text-amber-500 bg-amber-50 px-2 py-1 rounded-full flex items-center gap-1">
+                          ⭐ {place.danhgia}
+                        </span>
+                      )}
+                      {place.giatien ? (
+                        <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(place.giatien)}
+                        </span>
+                      ) : null}
                     </div>
 
                   </div>

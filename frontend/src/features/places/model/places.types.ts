@@ -1,4 +1,4 @@
-export type PlaceStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type PlaceStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'PENDING_DELETE';
 
 export interface PlaceDetail {
   mota_google?: string;

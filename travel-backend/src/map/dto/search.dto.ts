@@ -11,4 +11,8 @@ export class SearchDto {
   @IsOptional()
   @IsNumber()
   lng?: number;
+
+  @IsOptional()
+  @IsString()
+  loai?: string;
 }

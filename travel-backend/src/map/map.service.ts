@@ -12,21 +12,30 @@ export class MapService {
     private readonly goongMapProvider: GoongMapProvider,
   ) {}
 
-  async hybridSearch(keyword: string, lat?: number, lng?: number) {
+  async hybridSearch(keyword: string, lat?: number, lng?: number, loai?: string) {
     try {
+      const whereClause: any = {};
+      
+      if (keyword && keyword.trim() !== '') {
+        whereClause.OR = [
+          { ten: { contains: keyword, mode: 'insensitive' } },
+          { tu_khoa: { contains: keyword, mode: 'insensitive' } },
+          { quan_huyen: { contains: keyword, mode: 'insensitive' } },
+        ];
+      }
+
+      if (loai && loai !== 'all') {
+        whereClause.loai = loai;
+      }
+
       const internalPlaces = await this.prisma.diadiem.findMany({
-        where: {
-          OR: [
-            { ten: { contains: keyword, mode: 'insensitive' } },
-            { tu_khoa: { contains: keyword, mode: 'insensitive' } },
-            { quan_huyen: { contains: keyword, mode: 'insensitive' } },
-          ],
-        },
+        where: whereClause,
         include: {
           chitiet_diadiem: true,
           hoatdong_diadiem: true,
+          hinhanh_diadiem: true,
         },
-        take: 10,
+        take: 30, // Tăng limit lên một chút để hiển thị đa dạng
       });
 
       return internalPlaces.map((place) => ({
@@ -42,6 +51,7 @@ export class MapService {
         is_internal: true,
         chitiet_diadiem: place.chitiet_diadiem,
         hoatdong_diadiem: place.hoatdong_diadiem,
+        hinhanh_diadiem: place.hinhanh_diadiem,
       }));
     } catch (error: any) {
       this.logger.error(`Internal search error: ${error.message}`);
@@ -65,6 +75,7 @@ export class MapService {
       description: prediction.description,
       main_text: prediction.structured_formatting?.main_text || prediction.description,
       secondary_text: prediction.structured_formatting?.secondary_text || '',
+      district: prediction.compound?.district || '',
       lat: null,
       lng: null,
       ten: prediction.structured_formatting?.main_text || prediction.description,

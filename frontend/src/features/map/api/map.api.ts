@@ -5,6 +5,7 @@ export interface AutocompletePrediction {
   description: string;
   main_text: string;
   secondary_text: string;
+  district?: string;
   lat: number | null;
   lng: number | null;
   ten: string;
@@ -15,6 +16,11 @@ export interface PlaceDetailRaw {
   place_id: string;
   name: string;
   formatted_address: string;
+  address_components?: Array<{
+    long_name: string;
+    short_name: string;
+    types: string[];
+  }>;
   geometry: {
     location: {
       lat: number;

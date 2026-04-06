@@ -139,6 +139,18 @@ export function PlaceDetailModal({
             {displayPlace.quan_huyen && (
               <p className="text-sm text-slate-600 italic mt-1">{displayPlace.quan_huyen}</p>
             )}
+            <div className="flex gap-2 mt-2">
+              {displayPlace.danhgia && (
+                <span className="text-xs font-medium text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  ⭐ {displayPlace.danhgia}
+                </span>
+              )}
+              {displayPlace.giatien != null && !isNaN(Number(displayPlace.giatien)) ? (
+                <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(displayPlace.giatien))}
+                </span>
+              ) : null}
+            </div>
           </div>
           <button
             onClick={onClose}
@@ -151,6 +163,46 @@ export function PlaceDetailModal({
 
         {/* Content */}
         <div className="p-4 space-y-4">
+          {/* Images Grid */}
+          {displayPlace.hinhanh_diadiem && displayPlace.hinhanh_diadiem.length > 0 && (
+            <div className="flex gap-2 h-48 rounded-lg overflow-hidden mb-2">
+              <div className="flex-1 h-full">
+                <img 
+                  src={displayPlace.hinhanh_diadiem[0].url} 
+                  alt={displayPlace.ten} 
+                  className="w-full h-full object-cover" 
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+              </div>
+              {displayPlace.hinhanh_diadiem.length > 1 && (
+                <div className="flex flex-col gap-2 w-1/3">
+                  <div className="flex-1 h-1/2">
+                    <img 
+                      src={displayPlace.hinhanh_diadiem[1].url} 
+                      alt="Detail" 
+                      className="w-full h-full object-cover rounded-tr-lg" 
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                  </div>
+                  {displayPlace.hinhanh_diadiem.length > 2 && (
+                    <div className="flex-1 h-1/2 relative group">
+                      <img 
+                        src={displayPlace.hinhanh_diadiem[2].url} 
+                        alt="Detail" 
+                        className="w-full h-full object-cover rounded-br-lg" 
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      />
+                      {displayPlace.hinhanh_diadiem.length > 3 && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white font-bold text-sm">
+                          +{displayPlace.hinhanh_diadiem.length - 3}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           {/* Address */}
           {displayPlace.diachi && (
             <div className="flex gap-3">
@@ -163,10 +215,18 @@ export function PlaceDetailModal({
           )}
 
           {/* Description */}
-          {placeDetail?.chitiet_diadiem && placeDetail.chitiet_diadiem[0]?.mota_tonghop && (
-            <div className="bg-gray-50 border-l-4 border-blue-400 p-3 rounded">
-              <p className="text-xs font-semibold text-slate-600 uppercase mb-1">Mô tả</p>
-              <p className="text-sm text-slate-900">{placeDetail.chitiet_diadiem[0].mota_tonghop}</p>
+          {placeDetail?.chitiet_diadiem && (placeDetail.chitiet_diadiem[0]?.mota_tonghop || placeDetail.chitiet_diadiem[0]?.mota_google) && (
+            <div className="bg-gray-50 border-l-4 border-blue-400 p-3 rounded space-y-2">
+              <p className="text-xs font-semibold text-slate-600 uppercase mb-1">Mô tả chi tiết</p>
+              {placeDetail.chitiet_diadiem[0]?.mota_tonghop && (
+                <p className="text-sm text-slate-900">{placeDetail.chitiet_diadiem[0].mota_tonghop}</p>
+              )}
+              {placeDetail.chitiet_diadiem[0]?.mota_google && (
+                <div className="mt-2 text-xs italic text-slate-600 border-t border-gray-200 pt-2">
+                  <span className="font-semibold">Từ Google Places: </span>
+                  {placeDetail.chitiet_diadiem[0].mota_google}
+                </div>
+              )}
             </div>
           )}
 
@@ -237,31 +297,38 @@ export function PlaceDetailModal({
           {/* Activities / Suggestions */}
           {placeDetail?.hoatdong_diadiem && placeDetail.hoatdong_diadiem.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-slate-600 uppercase mb-2 flex items-center gap-1">
+              <p className="text-xs font-semibold text-slate-600 uppercase mb-3 flex items-center gap-1">
                 <Tag className="w-4 h-4" />
                 Hoạt động gợi ý
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div className="space-y-3">
                 {placeDetail.hoatdong_diadiem.map((activity: any, idx: number) => (
-                  <div
-                    key={idx}
-                    className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs"
-                  >
-                    <span>{activity.ten_hoatdong}</span>
+                  <div key={idx} className="bg-indigo-50/50 border border-indigo-100 rounded-lg p-3">
+                    <div className="flex items-start justify-between mb-1">
+                      <h4 className="text-sm font-bold text-indigo-900">{activity.ten_hoatdong}</h4>
+                      {activity.gia_thamkhao !== undefined && activity.gia_thamkhao !== null ? (
+                        <span className="text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded">
+                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(activity.gia_thamkhao) || 0)}
+                        </span>
+                      ) : null}
+                    </div>
+                    {activity.loai_hoatdong && (
+                      <span className="inline-block px-2 py-0.5 bg-white border border-indigo-200 text-indigo-600 rounded text-[10px] uppercase font-bold mb-2">
+                        {activity.loai_hoatdong}
+                      </span>
+                    )}
+                    {activity.noidung_chitiet && (
+                      <p className="text-sm text-slate-700 mb-2">{activity.noidung_chitiet}</p>
+                    )}
+                    {activity.thoidiem_lytuong && (
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500 bg-white px-2 py-1.5 rounded border border-slate-100">
+                        <Clock className="w-3.5 h-3.5 text-orange-400" />
+                        <span>Thời điểm lý tưởng: <span className="font-medium text-slate-700">{activity.thoidiem_lytuong}</span></span>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
-              {placeDetail.hoatdong_diadiem.some((a: any) => a.noidung_chitiet) && (
-                <div className="mt-2 text-xs text-slate-600 space-y-1">
-                  {placeDetail.hoatdong_diadiem.map((activity: any, idx: number) =>
-                    activity.noidung_chitiet ? (
-                      <p key={idx} className="italic">
-                        {activity.noidung_chitiet}
-                      </p>
-                    ) : null,
-                  )}
-                </div>
-              )}
             </div>
           )}
 
@@ -273,22 +340,6 @@ export function PlaceDetailModal({
             </div>
           )}
 
-          {/* Notes textarea */}
-          <div>
-            <label htmlFor="notes" className="block text-xs font-semibold text-slate-600 uppercase mb-2">
-              Ghi chú: Bạn sẽ làm gì ở đây?
-            </label>
-            <textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value.slice(0, 200))}
-              placeholder="Nhập ghi chú của bạn... (tùy chọn)"
-              className="w-full h-24 p-3 border border-gray-300 rounded-lg text-slate-900 placeholder-gray-500 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm"
-            />
-            <p className="text-xs text-slate-600 mt-1">
-              {notes.length}/200 ký tự
-            </p>
-          </div>
         </div>
 
         {/* Footer */}
