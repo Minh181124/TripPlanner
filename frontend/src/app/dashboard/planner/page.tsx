@@ -5,7 +5,9 @@ import { MultiDayPlanner } from '@/components/MultiDayPlanner';
 
 export default function PlannerPage() {
   const searchParams = useSearchParams();
-  const idParam = searchParams.get('id');
-  const editId = idParam ? parseInt(idParam, 10) : undefined;
-  return <MultiDayPlanner editId={editId} />;
+  // Temporarily disabled passing id to planner
+  // const idParam = searchParams.get('id');
+  // const editId = idParam ? parseInt(idParam, 10) : undefined;
+  
+  return <MultiDayPlanner editId={undefined} />;
 }
