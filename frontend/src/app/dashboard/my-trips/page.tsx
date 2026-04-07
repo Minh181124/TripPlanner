@@ -419,14 +419,13 @@ export default function MyTripsPage() {
                       </div>
                     )}
 
-                    {/* Edit button (Temporarily disabled) */}
+                    {/* Edit button */}
                     <button
-                      disabled
                       onClick={() => router.push(`/dashboard/planner?id=${it.lichtrinh_nguoidung_id}`)}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 text-slate-400 text-sm font-semibold cursor-not-allowed transition-colors"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-50 text-indigo-700 text-sm font-semibold hover:bg-indigo-100 transition-all hover:shadow-sm"
                     >
                       <Eye className="w-4 h-4" />
-                      Xem & Chỉnh sửa (Sắp ra mắt)
+                      Xem & Chỉnh sửa
                     </button>
                   </div>
                 </div>

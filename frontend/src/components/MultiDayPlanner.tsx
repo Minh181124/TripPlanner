@@ -1,16 +1,9 @@
 'use client';
 
-<<<<<<< HEAD
 import { useItinerary, useItineraryStats, PlanDetailEditor } from '@/features/itinerary';
-import { TimelineEditorWithMap } from './TimelineEditorWithMap';
-import { Save, AlertCircle, ArrowRight, ArrowLeft, CheckCircle2, Pencil } from 'lucide-react';
-=======
-import { useItinerary, useItineraryStats } from '@/features/itinerary';
 import { useAuth } from '@/features/auth';
-
 import { TimelineEditorWithMap } from './TimelineEditorWithMap';
-import { Save, AlertCircle, Loader } from 'lucide-react';
->>>>>>> 3946d82ca6b5e066daf93c9151ba45302aa553e3
+import { Save, AlertCircle, ArrowRight, ArrowLeft, CheckCircle2, Pencil, Loader } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import apiClient from '@/shared/api/apiClient';
@@ -147,12 +140,8 @@ interface MultiDayPlannerProps {
 
 export function MultiDayPlanner({ editId }: MultiDayPlannerProps) {
   const router = useRouter();
-<<<<<<< HEAD
-  const { itinerary, validateItineraryTitle, validateAllDaysHavePlaces, setIsLoading, loadItinerary } = useItinerary();
-=======
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
-  const { itinerary, initializeItinerary, validateItineraryTitle, validateAllDaysHavePlaces, setIsLoading } = useItinerary();
->>>>>>> 3946d82ca6b5e066daf93c9151ba45302aa553e3
+  const { itinerary, validateItineraryTitle, validateAllDaysHavePlaces, setIsLoading, loadItinerary } = useItinerary();
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [step, setStep] = useState<'timeline' | 'details'>('timeline');
@@ -163,7 +152,7 @@ export function MultiDayPlanner({ editId }: MultiDayPlannerProps) {
     if (!isAuthLoading) {
       if (!isAuthenticated) {
         router.push('/login');
-      } else if (user?.vaitro !== 'admin' && user?.vaitro !== 'local') {
+      } else if (user?.vaitro !== 'admin' && user?.vaitro !== 'local' && user?.vaitro !== 'user') {
         alert('Bạn không có quyền truy cập vào trang này.');
         router.push('/dashboard');
       }
@@ -280,28 +269,21 @@ export function MultiDayPlanner({ editId }: MultiDayPlannerProps) {
     }
   };
 
-<<<<<<< HEAD
-  // Loading skeleton while fetching edit data
-  if (loadingEdit) {
+  if (isAuthLoading || loadingEdit) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center space-y-4">
-          <svg className="animate-spin w-10 h-10 text-indigo-600 mx-auto" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          <p className="text-slate-600 font-medium">Đang tải lịch trình…</p>
+          <Loader className="w-10 h-10 text-indigo-600 animate-spin mx-auto" />
+          <p className="text-slate-600 font-medium">
+            {isAuthLoading ? 'Đang xác thực...' : 'Đang tải lịch trình...'}
+          </p>
         </div>
-=======
-  const isSameStartAndEndLocation = false; // Mocking or calculating if needed
-  
-  if (isAuthLoading || !isAuthenticated || (user?.vaitro !== 'admin' && user?.vaitro !== 'local')) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
-        <Loader className="w-10 h-10 text-indigo-500 animate-spin" />
->>>>>>> 3946d82ca6b5e066daf93c9151ba45302aa553e3
       </div>
     );
+  }
+
+  if (!isAuthenticated || (user?.vaitro !== 'admin' && user?.vaitro !== 'local' && user?.vaitro !== 'user')) {
+    return null; // Will redirect via useEffect
   }
 
   return (

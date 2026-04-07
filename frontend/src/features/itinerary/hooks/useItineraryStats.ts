@@ -23,7 +23,20 @@ import type { PlaceItem } from '../types/itinerary.types';
 export function useItineraryStats() {
   const { itinerary, updateDayStats } = useItinerary();
 
-  // Auto-calculate stats cho tất cả ngày khi places thay đổi
+  // Fingerprint để nhận diện thay đổi thực sự trong danh sách địa điểm (vị trí, thứ tự, thời gian ở lại)
+  // giúp tránh vòng lặp vô tận khi updateDayStats làm itinerary.days thay đổi reference.
+  const placesFingerprint = JSON.stringify(
+    itinerary.days.map((day) =>
+      day.places.map((p) => ({
+        id: p.instanceId,
+        lat: p.lat,
+        lng: p.lng,
+        stay: p.stayDuration ?? p.thoiluong ?? 60,
+      }))
+    )
+  );
+
+  // Auto-calculate stats cho tất cả ngày khi places thực sự thay đổi
   useEffect(() => {
     itinerary.days.forEach((day, dayIndex) => {
       if (day.places.length > 0) {
@@ -35,8 +48,8 @@ export function useItineraryStats() {
         });
       }
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itinerary.days, updateDayStats]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [placesFingerprint, updateDayStats]);
 
   /**
    * Tính khoảng cách và thời gian cho một ngày cụ thể
