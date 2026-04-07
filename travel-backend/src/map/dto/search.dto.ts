@@ -15,4 +15,20 @@ export class SearchDto {
   @IsOptional()
   @IsString()
   loai?: string;
+
+  @IsOptional()
+  @IsString()
+  quan_huyen?: string;
+
+  @IsOptional()
+  @IsNumber()
+  gia_min?: number;
+
+  @IsOptional()
+  @IsNumber()
+  gia_max?: number;
+
+  @IsOptional()
+  @IsString()
+  thoidiem?: string;
 }

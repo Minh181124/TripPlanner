@@ -1,18 +1,32 @@
 'use client';
 
 import { useItinerary, useItineraryStats } from '@/features/itinerary';
+import { useAuth } from '@/features/auth';
 
 import { TimelineEditorWithMap } from './TimelineEditorWithMap';
-import { Save, AlertCircle } from 'lucide-react';
+import { Save, AlertCircle, Loader } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import apiClient from '@/shared/api/apiClient';
 
 export function MultiDayPlanner() {
   const router = useRouter();
+  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const { itinerary, initializeItinerary, validateItineraryTitle, validateAllDaysHavePlaces, setIsLoading } = useItinerary();
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Protect route - Only admin and local can access
+  useEffect(() => {
+    if (!isAuthLoading) {
+      if (!isAuthenticated) {
+        router.push('/login');
+      } else if (user?.vaitro !== 'admin' && user?.vaitro !== 'local') {
+        alert('Bạn không có quyền truy cập vào trang này.');
+        router.push('/dashboard');
+      }
+    }
+  }, [isAuthenticated, isAuthLoading, user, router]);
 
   // Auto-calculate day stats when places change
   useItineraryStats();
@@ -79,6 +93,16 @@ export function MultiDayPlanner() {
       setIsLoading(false);
     }
   };
+
+  const isSameStartAndEndLocation = false; // Mocking or calculating if needed
+  
+  if (isAuthLoading || !isAuthenticated || (user?.vaitro !== 'admin' && user?.vaitro !== 'local')) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50">
+        <Loader className="w-10 h-10 text-indigo-500 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

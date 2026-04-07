@@ -12,7 +12,16 @@ export class MapService {
     private readonly goongMapProvider: GoongMapProvider,
   ) {}
 
-  async hybridSearch(keyword: string, lat?: number, lng?: number, loai?: string) {
+  async hybridSearch(
+    keyword: string, 
+    lat?: number, 
+    lng?: number, 
+    loai?: string,
+    quan_huyen?: string,
+    gia_min?: number,
+    gia_max?: number,
+    thoidiem?: string
+  ) {
     try {
       const whereClause: any = {};
       
@@ -24,8 +33,35 @@ export class MapService {
         ];
       }
 
+      // Handle multiple categories (comma-separated)
       if (loai && loai !== 'all') {
-        whereClause.loai = loai;
+        const types = loai.split(',').filter(t => t.trim() !== '');
+        if (types.length > 1) {
+          whereClause.loai = { in: types };
+        } else if (types.length === 1) {
+          whereClause.loai = types[0];
+        }
+      }
+
+      // District filter (case-insensitive)
+      if (quan_huyen && quan_huyen !== 'all') {
+        whereClause.quan_huyen = { contains: quan_huyen, mode: 'insensitive' };
+      }
+
+      // Price range filter
+      if (gia_min !== undefined || gia_max !== undefined) {
+        whereClause.giatien = {};
+        if (gia_min !== undefined) whereClause.giatien.gte = Number(gia_min);
+        if (gia_max !== undefined) whereClause.giatien.lte = Number(gia_max);
+      }
+
+      // Ideal time filter (looking into activities)
+      if (thoidiem && thoidiem !== 'all') {
+        whereClause.hoatdong_diadiem = {
+          some: {
+            thoidiem_lytuong: { contains: thoidiem, mode: 'insensitive' }
+          }
+        };
       }
 
       const internalPlaces = await this.prisma.diadiem.findMany({
@@ -35,7 +71,7 @@ export class MapService {
           hoatdong_diadiem: true,
           hinhanh_diadiem: true,
         },
-        take: 30, // Tăng limit lên một chút để hiển thị đa dạng
+        take: 30,
       });
 
       return internalPlaces.map((place) => ({

@@ -118,21 +118,19 @@ export function Header() {
             <div className="absolute right-0 top-full mt-0 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 bg-white border border-slate-200 rounded-lg shadow-lg z-50">
               <button
                 onClick={() => handleLanguageChange('vi')}
-                className={`block w-full text-left px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
-                  language === 'vi'
+                className={`block w-full text-left px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${language === 'vi'
                     ? 'bg-indigo-50 text-indigo-600'
                     : 'text-slate-700 hover:bg-slate-50'
-                }`}
+                  }`}
               >
                 Tiếng Việt
               </button>
               <button
                 onClick={() => handleLanguageChange('en')}
-                className={`block w-full text-left px-4 py-2 text-sm font-medium rounded-b-lg transition-colors ${
-                  language === 'en'
+                className={`block w-full text-left px-4 py-2 text-sm font-medium rounded-b-lg transition-colors ${language === 'en'
                     ? 'bg-indigo-50 text-indigo-600'
                     : 'text-slate-700 hover:bg-slate-50'
-                }`}
+                  }`}
               >
                 English
               </button>
@@ -165,9 +163,8 @@ export function Header() {
                 <p className="text-xs text-slate-500 capitalize">{user.vaitro}</p>
               </div>
               <ChevronDown
-                className={`w-4 h-4 transition-transform ${
-                  isProfileOpen ? 'rotate-180' : ''
-                }`}
+                className={`w-4 h-4 transition-transform ${isProfileOpen ? 'rotate-180' : ''
+                  }`}
               />
             </button>
 
