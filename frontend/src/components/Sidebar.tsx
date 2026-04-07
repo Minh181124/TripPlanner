@@ -163,6 +163,12 @@ export function Sidebar() {
             icon: <LayoutDashboard className="w-5 h-5" />,
           },
           {
+            label: 'Tạo lịch trình',
+            href: '/dashboard/planner',
+            icon: <Compass className="w-5 h-5" />,
+            badge: 'New',
+          },
+          {
             label: 'Chuyến đi của tôi',
             href: '/dashboard/my-trips',
             icon: <Map className="w-5 h-5" />,

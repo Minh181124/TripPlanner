@@ -103,12 +103,33 @@ export class LichtrinhNguoidungService {
               diadiem_id: upsertedPlace.diadiem_id,
               thutu: index + 1,
               ngay_thu_may: place.ngay_thu_may || 1,
-              thoigian_den: null,
+              thoigian_den: place.thoigian_den
+                ? (() => { const [h, m] = place.thoigian_den.split(':'); const d = new Date(0); d.setUTCHours(+h, +m, 0, 0); return d; })()
+                : null,
               thoiluong: place.thoiluong || null,
               ghichu: place.ghichu || null,
             },
           });
           details.push(detail);
+        }
+
+        // STEP 5: Tạo cấu hình mỗi ngày (startLocation, endLocation, startTime)
+        if (dto.dayConfigs && Array.isArray(dto.dayConfigs)) {
+          for (const dc of dto.dayConfigs) {
+            await tx.lichtrinh_nguoidung_ngay.create({
+              data: {
+                lichtrinh_nguoidung_id: lichtrinh.lichtrinh_nguoidung_id,
+                ngay_thu_may: dc.ngay_thu_may,
+                gio_batdau: dc.gio_batdau || null,
+                diem_batdau_ten: dc.diem_batdau_ten || null,
+                diem_batdau_lat: dc.diem_batdau_lat || null,
+                diem_batdau_lng: dc.diem_batdau_lng || null,
+                diem_ketthuc_ten: dc.diem_ketthuc_ten || null,
+                diem_ketthuc_lat: dc.diem_ketthuc_lat || null,
+                diem_ketthuc_lng: dc.diem_ketthuc_lng || null,
+              },
+            });
+          }
         }
 
         return {
@@ -168,6 +189,9 @@ export class LichtrinhNguoidungService {
               include: { diadiem: true },
               orderBy: { thutu: 'asc' },
             },
+            lichtrinh_nguoidung_ngay: {
+              orderBy: { ngay_thu_may: 'asc' },
+            },
             nguoidung: {
               select: {
                 nguoidung_id: true,
@@ -211,6 +235,9 @@ export class LichtrinhNguoidungService {
           lichtrinh_nguoidung_diadiem: {
             include: { diadiem: true },
             orderBy: { thutu: 'asc' },
+          },
+          lichtrinh_nguoidung_ngay: {
+            orderBy: { ngay_thu_may: 'asc' },
           },
           nguoidung: {
             select: {
@@ -318,11 +345,36 @@ export class LichtrinhNguoidungService {
                 diadiem_id: upsertedPlace.diadiem_id,
                 thutu: index + 1,
                 ngay_thu_may: place.ngay_thu_may || 1,
-                thoigian_den: null,
+                thoigian_den: place.thoigian_den
+                  ? (() => { const [h, m] = place.thoigian_den.split(':'); const d = new Date(0); d.setUTCHours(+h, +m, 0, 0); return d; })()
+                  : null,
                 thoiluong: place.thoiluong || null,
                 ghichu: place.ghichu || null,
               },
             });
+          }
+
+          // Xóa cũ + tạo mới day configs
+          await tx.lichtrinh_nguoidung_ngay.deleteMany({
+            where: { lichtrinh_nguoidung_id: id },
+          });
+
+          if (dto.dayConfigs && Array.isArray(dto.dayConfigs)) {
+            for (const dc of dto.dayConfigs) {
+              await tx.lichtrinh_nguoidung_ngay.create({
+                data: {
+                  lichtrinh_nguoidung_id: id,
+                  ngay_thu_may: dc.ngay_thu_may,
+                  gio_batdau: dc.gio_batdau || null,
+                  diem_batdau_ten: dc.diem_batdau_ten || null,
+                  diem_batdau_lat: dc.diem_batdau_lat || null,
+                  diem_batdau_lng: dc.diem_batdau_lng || null,
+                  diem_ketthuc_ten: dc.diem_ketthuc_ten || null,
+                  diem_ketthuc_lat: dc.diem_ketthuc_lat || null,
+                  diem_ketthuc_lng: dc.diem_ketthuc_lng || null,
+                },
+              });
+            }
           }
         }
 

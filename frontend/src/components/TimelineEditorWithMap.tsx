@@ -917,31 +917,7 @@ export function TimelineEditorWithMap() {
 
 
 
-                          {/* Edit Mode: Stay Duration Control */}
-                          {isEditing && (
-                            <div className="mt-3 pt-3 border-t border-slate-100 space-y-2">
-                              <label className="flex items-center gap-2 text-xs font-semibold text-slate-700">
-                                <Navigation className="w-3 h-3" />
-                                Ở lại (phút)
-                              </label>
-                              <input
-                                type="number"
-                                min="15"
-                                step="5"
-                                value={place.stayDuration || 60}
-                                onChange={(e) => {
-                                  const newDuration = parseInt(e.target.value) || 60;
-                                  handleStayDurationChange(place.instanceId, newDuration);
-                                }}
-                                className="w-full px-3 py-2 border border-indigo-200 rounded-lg text-xs text-slate-900 bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500 outline-none"
-                              />
-                            </div>
-                          )}
 
-                          {/* View Mode: Stay Duration Display */}
-                          {!isEditing && (
-                            <div className="text-xs text-slate-500 mt-2 font-medium">Ở: {place.stayDuration || 60} phút</div>
-                          )}
                         </div>
                       </div>
 

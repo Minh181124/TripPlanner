@@ -16,6 +16,26 @@ import type {
 export const ItineraryContext = createContext<ItineraryContextType | undefined>(undefined);
 
 // ---------------------------------------------------------------------------
+// Time Helpers (for cascading stayDuration recalculation)
+// ---------------------------------------------------------------------------
+
+/** Add minutes to a "HH:mm" string, clamped to 23:59 */
+function addMins(timeStr: string, minutes: number): string {
+  const [h, m] = timeStr.split(':').map(Number);
+  const totalMins = Math.min(h * 60 + m + minutes, 23 * 60 + 59);
+  const hh = String(Math.floor(totalMins / 60)).padStart(2, '0');
+  const mm = String(totalMins % 60).padStart(2, '0');
+  return `${hh}:${mm}`;
+}
+
+/** Difference in minutes between two "HH:mm" strings (end - start) */
+function diffMins(start: string, end: string): number {
+  const [h1, m1] = start.split(':').map(Number);
+  const [h2, m2] = end.split(':').map(Number);
+  return (h2 * 60 + m2) - (h1 * 60 + m1);
+}
+
+// ---------------------------------------------------------------------------
 // Default State
 // ---------------------------------------------------------------------------
 
@@ -62,6 +82,10 @@ export function ItineraryProvider({ children }: { children: ReactNode }) {
 
   const resetItinerary = useCallback(() => {
     setItinerary(defaultItinerary);
+  }, []);
+
+  const loadItinerary = useCallback((data: MultiDayItinerary) => {
+    setItinerary({ ...data, isDraft: false });
   }, []);
 
   // --- Place CRUD ---
@@ -147,15 +171,39 @@ export function ItineraryProvider({ children }: { children: ReactNode }) {
 
   const updatePlaceStayDuration = useCallback((day: number, instanceId: string, duration: number) => {
     setItinerary((prev) => {
-      const newItinerary = { ...prev };
-      const dayItinerary = newItinerary.days[day - 1];
+      const newDays = prev.days.map((d, idx) => {
+        if (idx !== day - 1) return d;
 
-      if (dayItinerary) {
-        const place = dayItinerary.places.find((p) => p.instanceId === instanceId);
-        if (place) place.stayDuration = duration;
-      }
+        // Deep-clone places so React detects change
+        const newPlaces = d.places.map((p) => ({ ...p }));
 
-      return newItinerary;
+        // Find changed index
+        const changedIdx = newPlaces.findIndex((p) => p.instanceId === instanceId);
+        if (changedIdx === -1) return d;
+
+        // Update stayDuration
+        newPlaces[changedIdx].stayDuration = duration;
+
+        // Recalculate departureTime for the changed place
+        if (newPlaces[changedIdx].arrivalTime) {
+          newPlaces[changedIdx].departureTime = addMins(newPlaces[changedIdx].arrivalTime!, duration);
+        }
+
+        // Cascade: recalculate all subsequent places
+        for (let i = changedIdx + 1; i < newPlaces.length; i++) {
+          const prevPlace = newPlaces[i - 1];
+          if (!prevPlace.departureTime) break;
+
+          // Each subsequent place arrives when the previous one departs
+          newPlaces[i].arrivalTime = prevPlace.departureTime;
+          const stay = newPlaces[i].stayDuration || 60;
+          newPlaces[i].departureTime = addMins(newPlaces[i].arrivalTime!, stay);
+        }
+
+        return { ...d, places: newPlaces };
+      });
+
+      return { ...prev, days: newDays };
     });
   }, []);
 
@@ -265,6 +313,7 @@ export function ItineraryProvider({ children }: { children: ReactNode }) {
     error,
     initializeItinerary,
     resetItinerary,
+    loadItinerary,
     addPlaceToDay,
     removePlaceFromDay,
     reorderPlacesInDay,

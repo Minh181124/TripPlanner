@@ -125,7 +125,7 @@ export function PlaceSelector() {
       setSelectedPlace(null);
       alert(`✓ Đã thêm ${newPlace.ten} vào ngày ${itinerary.currentDay}`);
 
-      setTimeout(() => router.push('/planner'), 500);
+      setTimeout(() => router.push('/dashboard/planner'), 500);
     } catch (err) {
       console.error('Error adding place:', err);
       setError('Lỗi khi thêm địa điểm');

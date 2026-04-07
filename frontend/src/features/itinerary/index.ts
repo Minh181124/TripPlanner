@@ -15,6 +15,9 @@
 // Context & Provider
 export { ItineraryProvider } from './context/ItineraryContext';
 
+// Components
+export { PlanDetailEditor } from './components/PlanDetailEditor';
+
 // Consumer hooks
 export { useItinerary } from './hooks/useItinerary';
 export { useItineraryStats } from './hooks/useItineraryStats';

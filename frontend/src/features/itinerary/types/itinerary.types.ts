@@ -86,6 +86,8 @@ export interface ItineraryContextType {
   // Initialization
   initializeItinerary: (soNgay: number, tieude?: string) => void;
   resetItinerary: () => void;
+  /** Load a full itinerary from server data (edit mode) */
+  loadItinerary: (data: MultiDayItinerary) => void;
   // CRUD actions (implemented in useItineraryActions)
   addPlaceToDay: (day: number, place: PlaceItem) => void;
   removePlaceFromDay: (day: number, instanceId: string) => void;

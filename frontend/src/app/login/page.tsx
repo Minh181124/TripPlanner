@@ -1,20 +1,26 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Mail, Lock, AlertCircle, Loader } from 'lucide-react';
-import { useAuth } from '@/features/auth';
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Mail, Lock, AlertCircle, Loader } from "lucide-react";
+import { useAuth } from "@/features/auth";
 
 /**
  * Login Page - Authentication form
  */
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated, isLoading: authLoading, error: authError, user } = useAuth();
+  const {
+    login,
+    isAuthenticated,
+    isLoading: authLoading,
+    error: authError,
+    user,
+  } = useAuth();
 
-  const [email, setEmail] = useState('');
-  const [matkhau, setMatkhau] = useState('');
+  const [email, setEmail] = useState("");
+  const [matkhau, setMatkhau] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -23,10 +29,8 @@ export default function LoginPage() {
    */
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
-      if (user?.vaitro === 'user') {
-        router.push('/');
-      } else {
-        router.push('/dashboard');
+      if (user?.vaitro) {
+        router.push("/dashboard");
       }
     }
   }, [isAuthenticated, authLoading, router, user]);
@@ -39,7 +43,7 @@ export default function LoginPage() {
     setError(null);
 
     if (!email || !matkhau) {
-      setError('Vui lòng điền đầy đủ thông tin');
+      setError("Vui lòng điền đầy đủ thông tin");
       return;
     }
 
@@ -48,7 +52,7 @@ export default function LoginPage() {
       await login(email, matkhau);
       // Không cần redirect ở đây vì useEffect sẽ xử lý
     } catch (err: any) {
-      setError(err.message || 'Lỗi đăng nhập. Vui lòng thử lại');
+      setError(err.message || "Lỗi đăng nhập. Vui lòng thử lại");
     } finally {
       setIsLoading(false);
     }
@@ -99,7 +103,9 @@ export default function LoginPage() {
                 <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex gap-3">
                   <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-red-800">Lỗi đăng nhập</p>
+                    <p className="text-sm font-medium text-red-800">
+                      Lỗi đăng nhập
+                    </p>
                     <p className="text-sm text-red-700">{error || authError}</p>
                   </div>
                 </div>
@@ -109,7 +115,10 @@ export default function LoginPage() {
               <form onSubmit={handleLogin} className="space-y-5">
                 {/* Email Input */}
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-slate-700 mb-2"
+                  >
                     Email
                   </label>
                   <div className="relative">
@@ -128,7 +137,10 @@ export default function LoginPage() {
 
                 {/* Password Input */}
                 <div>
-                  <label htmlFor="matkhau" className="block text-sm font-medium text-slate-700 mb-2">
+                  <label
+                    htmlFor="matkhau"
+                    className="block text-sm font-medium text-slate-700 mb-2"
+                  >
                     Mật khẩu
                   </label>
                   <div className="relative">
@@ -175,16 +187,16 @@ export default function LoginPage() {
                       Đang đăng nhập...
                     </>
                   ) : (
-                    'Đăng nhập'
+                    "Đăng nhập"
                   )}
                 </button>
 
                 {/* Demo Credentials */}
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
                   <p className="font-semibold mb-2">Demo Credentials:</p>
-                  <p>👤 Admin: admin@travel.com / password123</p>
-                  <p>🏘️ Local: local@travel.com / password123</p>
-                  <p>👥 User: user@travel.com / password123</p>
+                  <p>👤 Admin: admin@travel.com / 123456</p>
+                  <p>🏘️ Local: local@travel.com / 123456</p>
+                  <p>👥 User: user@travel.com / 123456</p>
                 </div>
               </form>
             </div>
@@ -192,7 +204,7 @@ export default function LoginPage() {
             {/* Card Footer */}
             <div className="px-8 py-4 bg-slate-50 border-t border-slate-200">
               <p className="text-center text-slate-600 text-sm">
-                Chưa có tài khoản?{' '}
+                Chưa có tài khoản?{" "}
                 <Link
                   href="/register"
                   className="text-indigo-600 hover:text-indigo-700 font-semibold"

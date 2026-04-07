@@ -142,8 +142,25 @@ model lichtrinh_nguoidung {
   
   nguoidung              nguoidung? @relation(fields: [nguoidung_id], references: [nguoidung_id], onDelete: Cascade)
   lichtrinh_nguoidung_diadiem lichtrinh_nguoidung_diadiem[]
+  lichtrinh_nguoidung_ngay    lichtrinh_nguoidung_ngay[]
   tuyen_duong            tuyen_duong[] @relation("lichtrinh_nguoidung_routes")
   lichtrinh_hoatdong     lichtrinh_hoatdong[]
+}
+
+// Cấu hình mỗi ngày trong lịch trình (điểm bắt đầu, kết thúc, giờ khởi hành)
+model lichtrinh_nguoidung_ngay {
+  id                     Int      @id @default(autoincrement())
+  lichtrinh_nguoidung_id Int
+  ngay_thu_may           Int      @default(1)
+  gio_batdau             String?  @db.VarChar(5)    // "08:00"
+  diem_batdau_ten        String?  @db.VarChar(255)
+  diem_batdau_lat        Float?
+  diem_batdau_lng        Float?
+  diem_ketthuc_ten       String?  @db.VarChar(255)
+  diem_ketthuc_lat       Float?
+  diem_ketthuc_lng       Float?
+
+  lichtrinh_nguoidung    lichtrinh_nguoidung @relation(fields: [lichtrinh_nguoidung_id], references: [lichtrinh_nguoidung_id], onDelete: Cascade)
 }
 
 model lichtrinh_nguoidung_diadiem {
