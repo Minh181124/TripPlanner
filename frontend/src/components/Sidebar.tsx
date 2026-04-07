@@ -131,6 +131,11 @@ export function Sidebar() {
             icon: <LayoutDashboard className="w-5 h-5" />,
           },
           {
+            label: 'Lập kế hoạch',
+            href: '/planner',
+            icon: <Compass className="w-5 h-5" />,
+          },
+          {
             label: 'Tạo tour',
             href: '/dashboard/create-tour',
             icon: <Map className="w-5 h-5" />,

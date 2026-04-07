@@ -1,8 +1,16 @@
 'use client';
 
+<<<<<<< HEAD
 import { useItinerary, useItineraryStats, PlanDetailEditor } from '@/features/itinerary';
 import { TimelineEditorWithMap } from './TimelineEditorWithMap';
 import { Save, AlertCircle, ArrowRight, ArrowLeft, CheckCircle2, Pencil } from 'lucide-react';
+=======
+import { useItinerary, useItineraryStats } from '@/features/itinerary';
+import { useAuth } from '@/features/auth';
+
+import { TimelineEditorWithMap } from './TimelineEditorWithMap';
+import { Save, AlertCircle, Loader } from 'lucide-react';
+>>>>>>> 3946d82ca6b5e066daf93c9151ba45302aa553e3
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import apiClient from '@/shared/api/apiClient';
@@ -139,11 +147,28 @@ interface MultiDayPlannerProps {
 
 export function MultiDayPlanner({ editId }: MultiDayPlannerProps) {
   const router = useRouter();
+<<<<<<< HEAD
   const { itinerary, validateItineraryTitle, validateAllDaysHavePlaces, setIsLoading, loadItinerary } = useItinerary();
+=======
+  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { itinerary, initializeItinerary, validateItineraryTitle, validateAllDaysHavePlaces, setIsLoading } = useItinerary();
+>>>>>>> 3946d82ca6b5e066daf93c9151ba45302aa553e3
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [step, setStep] = useState<'timeline' | 'details'>('timeline');
   const [loadingEdit, setLoadingEdit] = useState(!!editId);
+
+  // Protect route - Only admin and local can access
+  useEffect(() => {
+    if (!isAuthLoading) {
+      if (!isAuthenticated) {
+        router.push('/login');
+      } else if (user?.vaitro !== 'admin' && user?.vaitro !== 'local') {
+        alert('Bạn không có quyền truy cập vào trang này.');
+        router.push('/dashboard');
+      }
+    }
+  }, [isAuthenticated, isAuthLoading, user, router]);
 
   // Auto-calculate day stats when places change
   useItineraryStats();
@@ -255,6 +280,7 @@ export function MultiDayPlanner({ editId }: MultiDayPlannerProps) {
     }
   };
 
+<<<<<<< HEAD
   // Loading skeleton while fetching edit data
   if (loadingEdit) {
     return (
@@ -266,6 +292,14 @@ export function MultiDayPlanner({ editId }: MultiDayPlannerProps) {
           </svg>
           <p className="text-slate-600 font-medium">Đang tải lịch trình…</p>
         </div>
+=======
+  const isSameStartAndEndLocation = false; // Mocking or calculating if needed
+  
+  if (isAuthLoading || !isAuthenticated || (user?.vaitro !== 'admin' && user?.vaitro !== 'local')) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50">
+        <Loader className="w-10 h-10 text-indigo-500 animate-spin" />
+>>>>>>> 3946d82ca6b5e066daf93c9151ba45302aa553e3
       </div>
     );
   }

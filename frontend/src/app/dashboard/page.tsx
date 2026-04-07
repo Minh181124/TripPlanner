@@ -3,6 +3,7 @@
 import React from 'react';
 import { useAuth } from '@/features/auth';
 import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 /**
  * Dashboard Home Page - Main dashboard view
@@ -55,18 +56,24 @@ export default function Dashboard() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <QuickActionCard
-          title="Tạo chuyến đi mới"
-          description="Bắt đầu lập kế hoạch cho một chuyến đi tuyệt vời"
-          buttonText="Tạo ngay"
-          icon="✈️"
-        />
-        <QuickActionCard
-          title="Xem thống kê"
-          description="Xem chi tiết hoạt động và hiệu suất của bạn"
-          buttonText="Xem thêm"
-          icon="📊"
-        />
+        {(user?.vaitro === 'admin' || user?.vaitro === 'local') && (
+          <QuickActionCard
+            title="Tạo chuyến đi mới"
+            description="Bắt đầu lập kế hoạch cho một chuyến đi tuyệt vời"
+            buttonText="Tạo ngay"
+            icon="✈️"
+            href="/planner"
+          />
+        )}
+        {(user?.vaitro === 'admin' || user?.vaitro === 'local') && (
+          <QuickActionCard
+            title="Xem thống kê"
+            description="Xem chi tiết hoạt động và hiệu suất của bạn"
+            buttonText="Xem thêm"
+            icon="📊"
+            href="/dashboard/statistics"
+          />
+        )}
       </div>
 
       {/* Recent Activity */}
@@ -136,12 +143,22 @@ function QuickActionCard({
   description,
   buttonText,
   icon,
+  href,
 }: {
   title: string;
   description: string;
   buttonText: string;
   icon: string;
+  href?: string;
 }) {
+  const router = useRouter();
+  
+  const handleClick = () => {
+    if (href) {
+      router.push(href);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg border border-slate-200 p-6 hover:shadow-lg transition-shadow">
       <div className="flex items-start justify-between mb-4">
@@ -151,7 +168,10 @@ function QuickActionCard({
           <p className="text-sm text-slate-600 mt-2">{description}</p>
         </div>
       </div>
-      <button className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors text-sm">
+      <button 
+        onClick={handleClick}
+        className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors text-sm"
+      >
         {buttonText}
       </button>
     </div>

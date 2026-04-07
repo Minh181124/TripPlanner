@@ -18,6 +18,10 @@ export class MapController {
       searchDto.lat,
       searchDto.lng,
       searchDto.loai,
+      searchDto.quan_huyen,
+      searchDto.gia_min,
+      searchDto.gia_max,
+      searchDto.thoidiem,
     );
   }
 
