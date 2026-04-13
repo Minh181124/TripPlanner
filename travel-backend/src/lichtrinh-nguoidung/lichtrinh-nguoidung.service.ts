@@ -2,6 +2,22 @@ import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateLichtrinhNguoidungDto, UpdateLichtrinhNguoidungDto, LichtrinhNguoidungPlaceItemDto } from './dto/create-lichtrinh-nguoidung.dto';
 
+/**
+ * Safely parse a "HH:mm" time string into a UTC Date, or return null if invalid.
+ * Prevents Prisma "Invalid Date" errors when the input is empty/malformed.
+ */
+function safeParseTime(timeStr: string | null | undefined): Date | null {
+  if (!timeStr || typeof timeStr !== 'string') return null;
+  const parts = timeStr.split(':');
+  if (parts.length < 2) return null;
+  const h = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10);
+  if (isNaN(h) || isNaN(m) || h < 0 || h > 23 || m < 0 || m > 59) return null;
+  const d = new Date(0);
+  d.setUTCHours(h, m, 0, 0);
+  return d;
+}
+
 @Injectable()
 export class LichtrinhNguoidungService {
   private readonly logger = new Logger(LichtrinhNguoidungService.name);
@@ -103,9 +119,7 @@ export class LichtrinhNguoidungService {
               diadiem_id: upsertedPlace.diadiem_id,
               thutu: index + 1,
               ngay_thu_may: place.ngay_thu_may || 1,
-              thoigian_den: place.thoigian_den
-                ? (() => { const [h, m] = place.thoigian_den.split(':'); const d = new Date(0); d.setUTCHours(+h, +m, 0, 0); return d; })()
-                : null,
+              thoigian_den: safeParseTime(place.thoigian_den),
               thoiluong: place.thoiluong || null,
               ghichu: place.ghichu || null,
             },
@@ -345,9 +359,7 @@ export class LichtrinhNguoidungService {
                 diadiem_id: upsertedPlace.diadiem_id,
                 thutu: index + 1,
                 ngay_thu_may: place.ngay_thu_may || 1,
-                thoigian_den: place.thoigian_den
-                  ? (() => { const [h, m] = place.thoigian_den.split(':'); const d = new Date(0); d.setUTCHours(+h, +m, 0, 0); return d; })()
-                  : null,
+                thoigian_den: safeParseTime(place.thoigian_den),
                 thoiluong: place.thoiluong || null,
                 ghichu: place.ghichu || null,
               },

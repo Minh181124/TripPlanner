@@ -11,5 +11,5 @@ interface LocalItineraryBuilderProps {
  * Reuses MultiDayPlanner functionality
  */
 export default function LocalItineraryBuilder({ editId }: LocalItineraryBuilderProps) {
-  return <MultiDayPlanner />;
+  return <MultiDayPlanner editId={editId} />;
 }

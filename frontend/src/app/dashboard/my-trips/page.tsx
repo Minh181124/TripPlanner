@@ -10,6 +10,9 @@ import {
   Clock,
   Trash2,
   Eye,
+  Edit3,
+  ExternalLink,
+  Navigation,
   Map,
   Sparkles,
   Search,
@@ -19,6 +22,8 @@ import {
   ChevronRight,
   Plane,
   Route,
+  AlertTriangle,
+  X,
 } from 'lucide-react';
 import { useAuth } from '@/features/auth';
 import apiClient from '@/shared/api/apiClient';
@@ -107,6 +112,36 @@ function buildStaticMapUrl(itinerary: Itinerary): string {
   return `https://rsapi.goong.io/staticmap/route?origin=${origin.lat},${origin.lng}&destination=${dest.lat},${dest.lng}${waypointParam}&width=400&height=220&vehicle=car&api_key=${GOONG_MAP_KEY}`;
 }
 
+/**
+ * Build Google Maps Directions URL from itinerary places.
+ * Opens Google Maps with origin, destination, and waypoints so the user can get directions.
+ */
+function buildGoogleMapsUrl(itinerary: Itinerary): string {
+  const places = (itinerary.lichtrinh_nguoidung_diadiem ?? [])
+    .filter((p) => p.diadiem?.lat && p.diadiem?.lng)
+    .sort((a, b) => a.thutu - b.thutu);
+
+  if (places.length === 0) return '';
+
+  const origin = places[0].diadiem!;
+  const dest = places[places.length - 1].diadiem!;
+
+  let url = `https://www.google.com/maps/dir/?api=1`;
+  url += `&origin=${origin.lat},${origin.lng}`;
+  url += `&destination=${dest.lat},${dest.lng}`;
+
+  if (places.length > 2) {
+    const waypoints = places
+      .slice(1, -1)
+      .map((p) => `${p.diadiem!.lat},${p.diadiem!.lng}`)
+      .join('|');
+    url += `&waypoints=${waypoints}`;
+  }
+
+  url += `&travelmode=driving`;
+  return url;
+}
+
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
@@ -119,6 +154,7 @@ export default function MyTripsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteModalId, setDeleteModalId] = useState<number | null>(null);
 
   // Filters & sort
   const [searchQuery, setSearchQuery] = useState('');
@@ -154,8 +190,8 @@ export default function MyTripsPage() {
 
   // Delete
   const handleDelete = async (id: number) => {
-    if (!confirm('Bạn có chắc muốn xóa lịch trình này?')) return;
     setDeletingId(id);
+    setDeleteModalId(null);
     try {
       await apiClient.delete(`/lichtrinh-nguoidung/${id}`);
       setItineraries((prev) => prev.filter((it) => it.lichtrinh_nguoidung_id !== id));
@@ -354,7 +390,7 @@ export default function MyTripsPage() {
                     {/* Quick actions overlay */}
                     <div className="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
-                        onClick={() => handleDelete(it.lichtrinh_nguoidung_id)}
+                        onClick={() => setDeleteModalId(it.lichtrinh_nguoidung_id)}
                         disabled={isDeleting}
                         className="w-8 h-8 rounded-full bg-red-500/80 backdrop-blur-sm text-white flex items-center justify-center hover:bg-red-600 transition-colors disabled:opacity-50"
                         title="Xóa"
@@ -419,14 +455,41 @@ export default function MyTripsPage() {
                       </div>
                     )}
 
-                    {/* Edit button (Temporarily disabled) */}
-                    <button
-                      disabled
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 text-slate-400 text-sm font-semibold cursor-not-allowed"
-                    >
-                      <Eye className="w-4 h-4" />
-                      Xem & Chỉnh sửa (Sắp ra mắt)
-                    </button>
+                    {/* Action buttons: View on Maps, Edit, Delete */}
+                    <div className="flex gap-2">
+                      {/* View on Google Maps */}
+                      {buildGoogleMapsUrl(it) && (
+                        <a
+                          href={buildGoogleMapsUrl(it)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 text-white text-xs font-semibold shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all"
+                          title="Mở Google Maps để chỉ đường"
+                        >
+                          <Navigation className="w-3.5 h-3.5" />
+                          Chỉ đường
+                        </a>
+                      )}
+
+                      {/* Edit */}
+                      <Link
+                        href={`/local/builder/${it.lichtrinh_nguoidung_id}`}
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-xs font-semibold shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        Sửa
+                      </Link>
+
+                      {/* Delete */}
+                      <button
+                        onClick={() => setDeleteModalId(it.lichtrinh_nguoidung_id)}
+                        disabled={isDeleting}
+                        className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border-2 border-red-200 text-red-500 text-xs font-semibold hover:bg-red-50 hover:border-red-300 transition-all disabled:opacity-50"
+                        title="Xóa lịch trình"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -458,6 +521,52 @@ export default function MyTripsPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteModalId !== null && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="px-6 pt-6 pb-4 flex items-start gap-4">
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-bold text-slate-900">Xóa lịch trình?</h3>
+                <p className="text-sm text-slate-500 mt-1">
+                  Bạn có chắc chắn muốn xóa lịch trình{' '}
+                  <span className="font-semibold text-slate-700">
+                    &quot;{itineraries.find((it) => it.lichtrinh_nguoidung_id === deleteModalId)?.tieude || '---'}&quot;
+                  </span>
+                  ? Hành động này không thể hoàn tác.
+                </p>
+              </div>
+              <button
+                onClick={() => setDeleteModalId(null)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+              <button
+                onClick={() => setDeleteModalId(null)}
+                className="px-5 py-2.5 text-sm font-semibold text-slate-700 bg-white border-2 border-slate-200 rounded-xl hover:bg-slate-50 transition-all"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={() => handleDelete(deleteModalId)}
+                className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-red-600 rounded-xl hover:from-red-600 hover:to-red-700 shadow-sm hover:shadow-md transition-all"
+              >
+                Xóa lịch trình
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

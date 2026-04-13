@@ -78,6 +78,11 @@ export function useItineraryStats() {
         const currentPlace = places[i];
         const nextPlace = places[i + 1];
 
+        // Delay trước mỗi segment (trừ segment đầu tiên) để tránh 429 Too Many Requests
+        if (i > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+
         try {
           const response: any = await apiClient.get('/map/distance-matrix', {
             params: {
@@ -92,12 +97,15 @@ export function useItineraryStats() {
             totalDistance += Number(data.distance) || 0;
             totalTime += Number(data.duration) || 0;
           }
-        } catch (error) {
-          console.warn(`[useItineraryStats] Error between place ${i} and ${i + 1}:`, error);
+        } catch (error: any) {
+          // Warning thay vì error — không crash UI
+          const statusCode = error?.response?.status;
+          if (statusCode === 429) {
+            console.warn(`[useItineraryStats] ⚠️ Too many requests — bỏ qua segment ${i}→${i + 1}`);
+          } else {
+            console.warn(`[useItineraryStats] ⚠️ Lỗi tính khoảng cách segment ${i}→${i + 1}:`, error?.message || error);
+          }
         }
-
-        // Nhỏ delay để tránh overload API
-        await new Promise((resolve) => setTimeout(resolve, 100));
       }
 
       // Cộng thêm thời gian ở mỗi địa điểm

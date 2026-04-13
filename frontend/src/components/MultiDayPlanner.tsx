@@ -141,11 +141,19 @@ interface MultiDayPlannerProps {
 export function MultiDayPlanner({ editId }: MultiDayPlannerProps) {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
-  const { itinerary, validateItineraryTitle, validateAllDaysHavePlaces, setIsLoading, loadItinerary } = useItinerary();
+  const { itinerary, validateItineraryTitle, validateAllDaysHavePlaces, setIsLoading, loadItinerary, resetItinerary } = useItinerary();
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [step, setStep] = useState<'timeline' | 'details'>('timeline');
   const [loadingEdit, setLoadingEdit] = useState(!!editId);
+
+  // Reset itinerary state when creating NEW (not editing)
+  useEffect(() => {
+    if (!editId) {
+      resetItinerary();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editId]);
 
   // Protect route - Only admin and local can access
   useEffect(() => {

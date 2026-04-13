@@ -777,9 +777,15 @@ export function TimelineEditorWithMap() {
           </div>
 
           {calculationError && (
-            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-red-700 text-xs backdrop-blur-sm">
+            <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-amber-700 text-xs backdrop-blur-sm">
               <AlertCircle className="w-3 h-3 shrink-0" />
-              <span>{calculationError}</span>
+              <span>⚠️ {calculationError}</span>
+              <button 
+                onClick={() => setCalculationError(null)}
+                className="ml-auto text-amber-500 hover:text-amber-700 font-bold text-xs"
+              >
+                ✕
+              </button>
             </div>
           )}
         </div>

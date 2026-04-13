@@ -6,6 +6,9 @@ import apiClient from '@/shared/api/apiClient';
 import { addMinutes, format, parse } from 'date-fns';
 import type { StartLocation } from '../types/itinerary.types';
 
+/** Delay helper to avoid map API rate-limiting (429 Too Many Requests) */
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
 export interface TravelRoute {
   startIndex: number;
   endIndex: number;
@@ -105,8 +108,12 @@ export function useCalculateTimeline() {
           durationText: route.durationText || '',
           overviewPolyline: route.overviewPolyline?.points || route.overviewPolyline,
         }));
-      } catch (error) {
-        console.error('[useCalculateTimeline] Direction API error:', error);
+      } catch (error: any) {
+        // Graceful fallback: warn instead of crash so the UI doesn't break
+        const msg = error?.response?.status === 429
+          ? '[useCalculateTimeline] ⚠️ Too many requests – skipping segment'
+          : '[useCalculateTimeline] ⚠️ Direction API warning';
+        console.warn(msg, error?.message || error);
         return [];
       }
     },
@@ -148,6 +155,11 @@ export function useCalculateTimeline() {
         const place = dayData.places[i];
         const vehicle = transportModes[i] || 'car';
 
+        // Delay between consecutive API calls to prevent 429 Too Many Requests
+        if (i > 0) {
+          await delay(300);
+        }
+
         try {
           const routes = await getDirectionRoutes(
             prevLocation.lat,
@@ -181,19 +193,29 @@ export function useCalculateTimeline() {
             currentTime = departureTime;
             prevLocation = { name: place.ten, lat: place.lat, lng: place.lng };
           } else {
-            // Fallback: không có route
+            // Fallback: không có route — vẫn tính thời gian mặc định
             place.arrivalTime = currentTime;
             place.stayDuration = place.stayDuration || 60;
             place.departureTime = addMinutesToTimeString(currentTime, place.stayDuration);
             currentTime = place.departureTime;
           }
-        } catch (error) {
-          console.error(`[useCalculateTimeline] Error for place ${place.ten}:`, error);
+        } catch (error: any) {
+          // Warning thay vì error — không crash UI
+          console.warn(`[useCalculateTimeline] ⚠️ Bỏ qua lỗi tính route cho "${place.ten}":`, error?.message || error);
+          place.arrivalTime = currentTime;
+          place.stayDuration = place.stayDuration || 60;
+          place.departureTime = addMinutesToTimeString(currentTime, place.stayDuration);
+          currentTime = place.departureTime;
         }
       }
 
       // Calculate final route back to endLocation if configured
       if (dayData.endLocation && startLocation) {
+        // Delay before final segment call
+        if (dayData.places.length > 0) {
+          await delay(300);
+        }
+
         const placesCount = dayData.places?.length || 0;
         const vehicle = transportModes[placesCount] || 'car';
         try {
@@ -213,12 +235,9 @@ export function useCalculateTimeline() {
               routes,
               selectedRouteIndex: 0,
             });
-            
-            // Note: We don't update departureTime here because end location is the final stop.
-            // The time arrived at endLocation would technically be `addMinutesToTimeString(currentTime, travelDurationMinutes)`
           }
-        } catch (error) {
-          console.error(`[useCalculateTimeline] Error calculating route to end location:`, error);
+        } catch (error: any) {
+          console.warn(`[useCalculateTimeline] ⚠️ Bỏ qua lỗi route về điểm kết thúc:`, error?.message || error);
         }
       }
 
