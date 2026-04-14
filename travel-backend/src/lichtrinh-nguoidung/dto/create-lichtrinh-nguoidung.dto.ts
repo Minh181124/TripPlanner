@@ -41,6 +41,10 @@ export class DayConfigDto {
  * DTO cho một địa điểm trong lịch trình người dùng
  */
 export class LichtrinhNguoidungPlaceItemDto {
+  @IsOptional()
+  @IsNumber()
+  id?: number;
+
   @IsString()
   mapboxPlaceId: string;
 

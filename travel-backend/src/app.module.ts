@@ -8,6 +8,7 @@ import { LichtrinhNguoidungModule } from './lichtrinh-nguoidung/lichtrinh-nguoid
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { MapModule } from './map/map.module';
+import { VeModule } from './ve/ve.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { MapModule } from './map/map.module';
     MapModule, // Hybrid search & place details (NEW)
     LichtrinhMauModule, // Lịch trình mẫu (Template) công khai
     LichtrinhNguoidungModule, // Lịch trình cá nhân (Personal Trip)
+    VeModule, // Kho vé (Ticket Library)
   ],
   controllers: [AppController],
   providers: [AppService],

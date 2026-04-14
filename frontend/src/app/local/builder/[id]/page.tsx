@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { ChevronLeft, Sparkles, Map, Home, Edit3 } from "lucide-react";
 import LocalItineraryBuilder from "@/components/LocalItineraryBuilder";
 
@@ -12,7 +12,14 @@ import LocalItineraryBuilder from "@/components/LocalItineraryBuilder";
 export default function LocalBuilderEditPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
+  
   const id = params?.id ? parseInt(String(params.id)) : undefined;
+  const fromSource = searchParams?.get('from');
+
+  // Xác định link quay lại dựa trên nguồn
+  const backLink = fromSource === 'dashboard' ? '/dashboard/my-trips' : '/local';
+  const backLabel = fromSource === 'dashboard' ? 'Quản lý lịch trình' : 'Trình quản lý Local';
 
   return (
     <main className="min-h-screen bg-white text-slate-900 font-sans selection:bg-indigo-100 relative">
@@ -42,13 +49,13 @@ export default function LocalBuilderEditPage() {
               <div className="h-4 w-[1px] bg-slate-200" />
 
               <button 
-                onClick={() => router.push('/local')}
+                onClick={() => router.push(backLink)}
                 className="group flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors"
               >
                 <div className="p-2 rounded-full bg-slate-100 group-hover:bg-indigo-50 transition-colors shadow-sm">
                   <ChevronLeft size={18} />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Quản lý lịch trình</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em]">{backLabel}</span>
               </button>
             </div>
 

@@ -71,6 +71,7 @@ function mapServerToItinerary(server: any): MultiDayItinerary {
     const stay = sp.thoiluong ?? 60;
 
     dayMap.get(day)!.push({
+      id: sp.id, // Bổ sung ID để nút Gắn vé hoạt động
       instanceId: `server-${sp.id}-${crypto.randomUUID()}`,
       diadiem_id: dd.diadiem_id,
       place_id: dd.google_place_id,
@@ -214,6 +215,7 @@ export function MultiDayPlanner({ editId }: MultiDayPlannerProps) {
 
       const flatPlaces = itinerary.days.flatMap((day) =>
         day.places.map((place) => ({
+          id: place.id, // Gửi ID để Backend giữ lại liên kết vé
           mapboxPlaceId: place.place_id,
           ten: place.ten,
           diachi: place.diachi || null,

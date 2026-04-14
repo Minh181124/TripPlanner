@@ -22,10 +22,15 @@ import {
   DollarSign,
   ChevronLeft,
   ChevronRight,
+  Ticket as TicketIcon,
 } from 'lucide-react';
 import { useItinerary } from '../hooks/useItinerary';
 import apiClient from '@/shared/api/apiClient';
 import type { PlaceItem } from '../types/itinerary.types';
+import { TicketBadge } from './TicketBadge';
+import { TicketLibraryModal } from './TicketLibraryModal';
+import { ticketService, type Ticket, type TicketMap } from '../services/ticketService';
+import { Plus } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -300,11 +305,17 @@ function PlaceNoteCard({
   dayNumber,
   index,
   slotConfig,
+  myTickets,
+  attachedTickets,
+  onRefreshTickets,
 }: {
   place: PlaceItem;
   dayNumber: number;
   index: number;
   slotConfig: Omit<TimeGroup, 'places'>;
+  myTickets: Ticket[];
+  attachedTickets: any[];
+  onRefreshTickets: () => void;
 }) {
   const { updatePlaceNotes, updatePlaceStayDuration } = useItinerary();
 
@@ -312,6 +323,8 @@ function PlaceNoteCard({
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [selectedActivityIds, setSelectedActivityIds] = useState<number[]>([]);
   const [expanded, setExpanded] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetachingId, setIsDetachingId] = useState<number | null>(null);
 
   // Fetch place detail on mount
   useEffect(() => {
@@ -347,6 +360,20 @@ function PlaceNoteCard({
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   }, []);
+
+  const handleDetach = async (attachId: number) => {
+    setIsDetachingId(attachId);
+    try {
+      await ticketService.detachTicket(attachId);
+      onRefreshTickets();
+    } catch (error) {
+      console.error('Detach ticket error:', error);
+    } finally {
+      setIsDetachingId(null);
+    }
+  };
+
+  const alreadyAttachedVeIds = useMemo(() => attachedTickets.map(at => at.ve_id), [attachedTickets]);
 
   const chitiet = detail?.chitiet_diadiem?.[0];
   const mota = chitiet?.mota_tonghop || chitiet?.mota_google;
@@ -510,6 +537,58 @@ function PlaceNoteCard({
               className="w-full px-4 py-3 text-sm text-slate-800 placeholder-slate-400 bg-white/90 border-2 border-slate-200 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition-all"
             />
           </div>
+
+          {/* ── Ticket Library Section ── */}
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-1.5 text-xs font-bold text-slate-700 uppercase tracking-wider">
+                <TicketIcon className="w-3.5 h-3.5 text-indigo-500" />
+                Vé đã gắn ({attachedTickets.length})
+              </label>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                disabled={!place.id}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                title={!place.id ? 'Vui lòng lưu lịch trình trước khi gắn vé' : ''}
+              >
+                <Plus className="w-3 h-3" />
+                Gắn vé
+              </button>
+            </div>
+
+            {attachedTickets.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {attachedTickets.map((at) => (
+                  <TicketBadge
+                    key={at.attachId}
+                    ticket={at}
+                    onDetach={handleDetach}
+                    isDetaching={isDetachingId === at.attachId}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400 italic">Chưa có vé nào cho địa điểm này.</p>
+            )}
+          </div>
+
+          {/* Ticket Modal */}
+          {isModalOpen && place.id && (
+            <TicketLibraryModal
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+              lichtrinhDiaDiemId={place.id}
+              myTickets={myTickets}
+              alreadyAttachedVeIds={alreadyAttachedVeIds}
+              onAttached={() => {
+                onRefreshTickets();
+              }}
+              onTicketCreated={(newTicket) => {
+                // Khi tạo vé mới xong, ta refresh danh sách vé (kho vé)
+                onRefreshTickets();
+              }}
+            />
+          )}
         </div>
       )}
     </div>
@@ -520,7 +599,19 @@ function PlaceNoteCard({
 // Time Group Section
 // ---------------------------------------------------------------------------
 
-function TimeGroupSection({ group, dayNumber }: { group: TimeGroup; dayNumber: number }) {
+function TimeGroupSection({
+  group,
+  dayNumber,
+  myTickets,
+  ticketMap,
+  onRefreshTickets,
+}: {
+  group: TimeGroup;
+  dayNumber: number;
+  myTickets: Ticket[];
+  ticketMap: TicketMap;
+  onRefreshTickets: () => void;
+}) {
   const [sectionExpanded, setSectionExpanded] = useState(true);
   if (group.places.length === 0) return null;
 
@@ -552,6 +643,9 @@ function TimeGroupSection({ group, dayNumber }: { group: TimeGroup; dayNumber: n
               dayNumber={dayNumber}
               index={idx}
               slotConfig={group}
+              myTickets={myTickets}
+              attachedTickets={place.id ? (ticketMap[place.id] || []) : []}
+              onRefreshTickets={onRefreshTickets}
             />
           ))}
         </div>
@@ -573,6 +667,32 @@ interface PlanDetailEditorProps {
 export function PlanDetailEditor({ onBack, onFinish, isSaving }: PlanDetailEditorProps) {
   const { itinerary, setCurrentDay } = useItinerary();
   const [activeDayTab, setActiveDayTab] = useState(itinerary.currentDay);
+  const [myTickets, setMyTickets] = useState<Ticket[]>([]);
+  const [ticketMap, setTicketMap] = useState<TicketMap>({});
+
+  // ── Fetch Tickets Data ──
+  const fetchTicketsData = useCallback(async () => {
+    if (!itinerary.id) {
+      console.warn('[PlanDetailEditor] No itinerary ID, skipping ticket fetch');
+      return;
+    }
+    try {
+      console.log('[PlanDetailEditor] Fetching tickets for itinerary:', itinerary.id);
+      const [tickets, map] = await Promise.all([
+        ticketService.getMyTickets(true),
+        ticketService.getTicketsForItinerary(itinerary.id),
+      ]);
+      console.log('[PlanDetailEditor] Tickets fetched, map keys:', Object.keys(map));
+      setMyTickets(tickets);
+      setTicketMap(map);
+    } catch (error) {
+      console.error('[PlanDetailEditor] Fetch tickets error:', error);
+    }
+  }, [itinerary.id]);
+
+  useEffect(() => {
+    fetchTicketsData();
+  }, [fetchTicketsData]);
 
   const dayData = itinerary.days[activeDayTab - 1];
 
@@ -652,7 +772,14 @@ export function PlanDetailEditor({ onBack, onFinish, isSaving }: PlanDetailEdito
           </div>
         ) : (
           groups.map((group) => (
-            <TimeGroupSection key={group.slot} group={group} dayNumber={activeDayTab} />
+            <TimeGroupSection
+              key={group.slot}
+              group={group}
+              dayNumber={activeDayTab}
+              myTickets={myTickets}
+              ticketMap={ticketMap}
+              onRefreshTickets={fetchTicketsData}
+            />
           ))
         )}
       </div>

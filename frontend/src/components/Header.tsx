@@ -58,6 +58,7 @@ export function Header() {
       settings: 'Cài đặt',
       revenue: 'Doanh thu',
       explore: 'Khám phá',
+      tickets: 'Kho vé của tôi',
     };
 
     return breadcrumbMap[lastSegment] || lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1);

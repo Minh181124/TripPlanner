@@ -11,6 +11,8 @@
  * như instanceId, thutu, stayDuration, arrivalTime, departureTime.
  */
 export interface PlaceItem {
+  /** ID từ bảng lichtrinh_nguoidung_diadiem trong DB (chỉ có khi đã lưu) */
+  id?: number;
   /** Unique ID cho instance này (được tạo khi thêm vào, dùng crypto.randomUUID()) */
   instanceId: string;
   diadiem_id: number;

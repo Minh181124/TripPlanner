@@ -200,17 +200,16 @@ export class LichtrinhNguoidungService {
           take,
           include: {
             lichtrinh_nguoidung_diadiem: {
-              include: { diadiem: true },
+              include: { 
+                diadiem: {
+                  select: { ten: true }
+                },
+                ve_diadiem_lichtrinh: true
+              },
               orderBy: { thutu: 'asc' },
             },
             lichtrinh_nguoidung_ngay: {
               orderBy: { ngay_thu_may: 'asc' },
-            },
-            nguoidung: {
-              select: {
-                nguoidung_id: true,
-                ten: true,
-              },
             },
           },
           orderBy: { ngaytao: 'desc' },
@@ -220,8 +219,18 @@ export class LichtrinhNguoidungService {
         }),
       ]);
 
+      const formattedItineraries = itineraries.map((it: any) => {
+        const totalTickets = it.lichtrinh_nguoidung_diadiem?.reduce((sum: number, place: any) => {
+          return sum + (place.ve_diadiem_lichtrinh?.length || 0);
+        }, 0) || 0;
+        return {
+          ...it,
+          ticketsCount: totalTickets
+        };
+      });
+
       return {
-        itineraries,
+        itineraries: formattedItineraries,
         pagination: {
           total,
           page: page || 1,
@@ -322,12 +331,21 @@ export class LichtrinhNguoidungService {
 
         // Nếu có places mới, xóa cái cũ và thêm mới
         if (dto.places && Array.isArray(dto.places)) {
+          const currentPlaceIds = dto.places
+            .map((p: any) => p.id)
+            .filter((id) => !!id);
+
+          // 1. Xóa các địa điểm không còn trong danh sách gửi lên
           await tx.lichtrinh_nguoidung_diadiem.deleteMany({
-            where: { lichtrinh_nguoidung_id: id },
+            where: {
+              lichtrinh_nguoidung_id: id,
+              id: { notIn: currentPlaceIds as number[] },
+            },
           });
 
-          const upsertedPlaces: any[] = [];
-          for (const place of dto.places) {
+          // 2. Xử lý từng địa điểm: Update nếu có ID, Create nếu chưa có
+          for (let index = 0; index < dto.places.length; index++) {
+            const place = dto.places[index];
             const upsertedPlace = await tx.diadiem.upsert({
               where: { google_place_id: place.mapboxPlaceId },
               update: {
@@ -346,24 +364,28 @@ export class LichtrinhNguoidungService {
                 ngaycapnhat: new Date(),
               },
             });
-            upsertedPlaces.push(upsertedPlace);
-          }
+            const placeData = {
+              lichtrinh_nguoidung_id: id,
+              diadiem_id: upsertedPlace.diadiem_id,
+              thutu: index + 1,
+              ngay_thu_may: place.ngay_thu_may || 1,
+              thoigian_den: safeParseTime(place.thoigian_den),
+              thoiluong: place.thoiluong || null,
+              ghichu: place.ghichu || null,
+            };
 
-          for (let index = 0; index < upsertedPlaces.length; index++) {
-            const place = dto.places[index];
-            const upsertedPlace = upsertedPlaces[index];
-
-            await tx.lichtrinh_nguoidung_diadiem.create({
-              data: {
-                lichtrinh_nguoidung_id: id,
-                diadiem_id: upsertedPlace.diadiem_id,
-                thutu: index + 1,
-                ngay_thu_may: place.ngay_thu_may || 1,
-                thoigian_den: safeParseTime(place.thoigian_den),
-                thoiluong: place.thoiluong || null,
-                ghichu: place.ghichu || null,
-              },
-            });
+            if ((place as any).id) {
+              // Cập nhật địa điểm cũ -> Giữ lại link Vé
+              await tx.lichtrinh_nguoidung_diadiem.update({
+                where: { id: (place as any).id },
+                data: placeData,
+              });
+            } else {
+              // Tạo địa điểm mới
+              await tx.lichtrinh_nguoidung_diadiem.create({
+                data: placeData,
+              });
+            }
           }
 
           // Xóa cũ + tạo mới day configs
