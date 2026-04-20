@@ -513,4 +513,188 @@ export class LichtrinhNguoidungService {
       );
     }
   }
+
+  /**
+   * Tạo lịch trình cá nhân từ lịch trình mẫu (Deep copy)
+   * 
+   * Quy trình:
+   * 1. Lấy lịch trình mẫu với tất cả dữ liệu liên quan
+   * 2. Copy các địa điểm (nếu chưa tồn tại)
+   * 3. Tạo nhanh lịch trình người dùng
+   * 4. Copy các địa điểm liên kết (lichtrinh_nguoidung_diadiem)
+   * 5. Copy các cấu hình ngày (lichtrinh_nguoidung_ngay)
+   * 6. Copy các tuyến đường (tuyen_duong)
+   */
+  async createLichtrinhNguoidungFromSample(sampleId: number, nguoidung_id: number) {
+    if (!sampleId || !nguoidung_id) {
+      throw new HttpException('Sampleid và nguoidung_id là bắt buộc', HttpStatus.BAD_REQUEST);
+    }
+
+    try {
+      // STEP 1: Kiểm tra sample tồn tại và chỉ chấp nhận APPROVED
+      const sample = await this.prisma.lichtrinh_mau.findUnique({
+        where: { lichtrinh_mau_id: sampleId },
+        include: {
+          lichtrinh_mau_diadiem: {
+            include: { diadiem: true },
+            orderBy: { thutu: 'asc' },
+          },
+          lichtrinh_mau_ngay: {
+            orderBy: { ngay_thu_may: 'asc' },
+          },
+          tuyen_duong: {
+            orderBy: { thutu: 'asc' },
+          },
+        },
+      });
+
+      if (!sample) {
+        throw new HttpException('Lịch trình mẫu không tồn tại', HttpStatus.NOT_FOUND);
+      }
+
+      if (sample.trang_thai !== 'APPROVED') {
+        throw new HttpException(
+          'Chỉ có thể sao chép lịch trình mẫu đã được duyệt',
+          HttpStatus.FORBIDDEN,
+        );
+      }
+
+      // STEP 2: Kiểm tra user tồn tại
+      const user = await this.prisma.nguoidung.findUnique({
+        where: { nguoidung_id },
+      });
+
+      if (!user) {
+        throw new HttpException('Người dùng không tồn tại', HttpStatus.NOT_FOUND);
+      }
+
+      // STEP 3: Thực hiện transaction để copy toàn bộ dữ liệu
+      const result = await this.prisma.$transaction(async (tx) => {
+        // 3a. Copy các địa điểm (upsert)
+        const placeMapping = new Map<number, number>(); // samplePlaceId -> newPlaceId
+
+        for (const samplePlace of sample.lichtrinh_mau_diadiem) {
+          if (!samplePlace.diadiem) continue;
+
+          const upsertedPlace = await tx.diadiem.upsert({
+            where: { google_place_id: samplePlace.diadiem.google_place_id },
+            update: {
+              ten: samplePlace.diadiem.ten,
+              diachi: samplePlace.diadiem.diachi || null,
+              lat: samplePlace.diadiem.lat,
+              lng: samplePlace.diadiem.lng,
+              ngaycapnhat: new Date(),
+            },
+            create: {
+              google_place_id: samplePlace.diadiem.google_place_id,
+              ten: samplePlace.diadiem.ten,
+              diachi: samplePlace.diadiem.diachi || null,
+              lat: samplePlace.diadiem.lat,
+              lng: samplePlace.diadiem.lng,
+              ngaycapnhat: new Date(),
+            },
+          });
+          placeMapping.set(samplePlace.diadiem.diadiem_id, upsertedPlace.diadiem_id);
+        }
+
+        // 3b. Tạo lịch trình người dùng mới (không có ngày)
+        const newItinerary = await tx.lichtrinh_nguoidung.create({
+          data: {
+            nguoidung_id: user.nguoidung_id,
+            tieude: sample.tieude,
+            trangthai: 'planning',
+            ngaytao: new Date(),
+            ngaybatdau: null,
+            ngayketthuc: null,
+            lichtrinh_mau_id: sampleId, // Track origin
+          },
+        });
+
+        // 3c. Copy lichtrinh_mau_diadiem → lichtrinh_nguoidung_diadiem
+        for (const sampleDetail of sample.lichtrinh_mau_diadiem) {
+          if (!sampleDetail.diadiem_id) continue;
+          const mappedDiadiemId = placeMapping.get(sampleDetail.diadiem_id);
+          if (!mappedDiadiemId) continue;
+
+          await tx.lichtrinh_nguoidung_diadiem.create({
+            data: {
+              lichtrinh_nguoidung_id: newItinerary.lichtrinh_nguoidung_id,
+              diadiem_id: mappedDiadiemId,
+              thutu: sampleDetail.thutu,
+              ngay_thu_may: sampleDetail.ngay_thu_may || 1,
+              thoigian_den: sampleDetail.thoigian_den || null,
+              thoiluong: sampleDetail.thoiluong || null,
+              ghichu: sampleDetail.ghichu || null,
+            },
+          });
+        }
+
+        // 3d. Copy lichtrinh_mau_ngay → lichtrinh_nguoidung_ngay
+        for (const sampleDay of sample.lichtrinh_mau_ngay) {
+          await tx.lichtrinh_nguoidung_ngay.create({
+            data: {
+              lichtrinh_nguoidung_id: newItinerary.lichtrinh_nguoidung_id,
+              ngay_thu_may: sampleDay.ngay_thu_may,
+              gio_batdau: sampleDay.gio_batdau || null,
+              diem_batdau_ten: sampleDay.diem_batdau_ten || null,
+              diem_batdau_lat: sampleDay.diem_batdau_lat || null,
+              diem_batdau_lng: sampleDay.diem_batdau_lng || null,
+              diem_ketthuc_ten: sampleDay.diem_ketthuc_ten || null,
+              diem_ketthuc_lat: sampleDay.diem_ketthuc_lat || null,
+              diem_ketthuc_lng: sampleDay.diem_ketthuc_lng || null,
+            },
+          });
+        }
+
+        // 3e. Copy tuyen_duong (routes)
+        for (const sampleRoute of sample.tuyen_duong) {
+          const mappedStartId = sampleRoute.diadiem_batdau_id
+            ? placeMapping.get(sampleRoute.diadiem_batdau_id)
+            : null;
+          const mappedEndId = sampleRoute.diadiem_ketthuc_id
+            ? placeMapping.get(sampleRoute.diadiem_ketthuc_id)
+            : null;
+
+          await tx.tuyen_duong.create({
+            data: {
+              lichtrinh_nguoidung_id: newItinerary.lichtrinh_nguoidung_id,
+              diadiem_batdau_id: mappedStartId || null,
+              diadiem_ketthuc_id: mappedEndId || null,
+              polyline: sampleRoute.polyline || null,
+              phuongtien: sampleRoute.phuongtien || 'car',
+              tong_khoangcach: sampleRoute.tong_khoangcach || null,
+              tong_thoigian: sampleRoute.tong_thoigian || null,
+              ngay_thu_may: sampleRoute.ngay_thu_may || 1,
+              thutu: sampleRoute.thutu || null,
+              ngaytao: new Date(),
+            },
+          });
+        }
+
+        return newItinerary;
+      });
+
+      this.logger.log(
+        `Tạo lịch trình cá nhân từ mẫu thành công: ${result.lichtrinh_nguoidung_id} (từ mẫu ${sampleId})`,
+      );
+
+      return {
+        message: 'Tạo lịch trình từ mẫu thành công',
+        data: {
+          lichtrinh_nguoidung_id: result.lichtrinh_nguoidung_id,
+          tieude: result.tieude,
+          nguoidung_id: result.nguoidung_id,
+          from_sample_id: sampleId,
+        },
+      };
+    } catch (error) {
+      this.logger.error('Lỗi tạo lịch trình từ mẫu:', error);
+      if (error instanceof HttpException) throw error;
+      throw new HttpException(
+        'Lỗi tạo lịch trình từ mẫu: ' + (error as any).message,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }
+

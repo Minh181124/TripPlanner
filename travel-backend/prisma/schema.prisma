@@ -100,6 +100,7 @@ model lichtrinh_mau {
   lichtrinh_mau_diadiem lichtrinh_mau_diadiem[]
   lichtrinh_mau_ngay    lichtrinh_mau_ngay[]
   tuyen_duong           tuyen_duong[]           @relation("lichtrinh_mau_routes")
+  lichtrinh_nguoidung   lichtrinh_nguoidung[]   // Clones created from this template
 }
 
 model lichtrinh_mau_diadiem {
@@ -123,8 +124,10 @@ model lichtrinh_nguoidung {
   ngaytao                     DateTime?                     @default(now()) @db.Timestamp(6)
   ngaybatdau                  DateTime?                     @db.Date
   ngayketthuc                 DateTime?                     @db.Date
+  lichtrinh_mau_id            Int?                          // Track which sample itinerary this was cloned from (for analytics)
   lichtrinh_hoatdong          lichtrinh_hoatdong[]
   nguoidung                   nguoidung?                    @relation(fields: [nguoidung_id], references: [nguoidung_id], onDelete: Cascade)
+  lichtrinh_mau               lichtrinh_mau?                @relation(fields: [lichtrinh_mau_id], references: [lichtrinh_mau_id], onDelete: SetNull)
   lichtrinh_nguoidung_diadiem lichtrinh_nguoidung_diadiem[]
   lichtrinh_nguoidung_ngay    lichtrinh_nguoidung_ngay[]
   tuyen_duong                 tuyen_duong[]                 @relation("lichtrinh_nguoidung_routes")

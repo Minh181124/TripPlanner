@@ -43,6 +43,23 @@ export class LichtrinhNguoidungController {
    */
 
   /**
+   * POST /lichtrinh-nguoidung/from-sample/:sampleId
+   * Tạo lịch trình cá nhân từ lịch trình mẫu (Deep copy)
+   * Sao chép tất cả dữ liệu: địa điểm, ngày, tuyến đường
+   */
+  @Post('from-sample/:sampleId')
+  @HttpCode(201)
+  async createLichtrinhNguoidungFromSample(
+    @Param('sampleId') sampleId: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.lichtrinhNguoidungService.createLichtrinhNguoidungFromSample(
+      parseInt(sampleId, 10),
+      user.nguoidung_id,
+    );
+  }
+
+  /**
    * POST /lichtrinh-nguoidung
    * Tạo lịch trình cá nhân mới
    */

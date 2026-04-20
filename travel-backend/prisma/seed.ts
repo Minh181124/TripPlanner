@@ -157,6 +157,7 @@ async function main() {
       nguoidung_id: local.nguoidung_id,
       sothich_id: chill.sothich_id,
       thoigian_dukien: '1 ngày',
+      trang_thai: 'APPROVED',
     },
   });
 
