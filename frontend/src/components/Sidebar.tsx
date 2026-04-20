@@ -102,9 +102,9 @@ export function Sidebar() {
             icon: <MessageSquareWarning className="w-5 h-5" />,
           },
           {
-            label: 'Duyệt mẫu tour',
-            href: '/dashboard/templates',
-            icon: <MapPin className="w-5 h-5" />,
+            label: 'Quản lý lịch trình mẫu',
+            href: '/dashboard/manage-sampletrips',
+            icon: <Map className="w-5 h-5" />,
           },
           {
             label: 'Kiểm duyệt địa điểm local',
@@ -147,8 +147,13 @@ export function Sidebar() {
             icon: <Package className="w-5 h-5" />,
           },
           {
+            label: 'Lịch trình mẫu của tôi',
+            href: '/dashboard/locals-trips',
+            icon: <Map className="w-5 h-5" />,
+          },
+          {
             label: 'Địa điểm của tôi',
-            href: '/dashboard/my-places',
+            href: '/dashboard/local-places',
             icon: <MapPin className="w-5 h-5" />,
           },
           {
@@ -176,7 +181,7 @@ export function Sidebar() {
           },
           {
             label: 'Chuyến đi của tôi',
-            href: '/dashboard/my-trips',
+            href: '/dashboard/user-trips',
             icon: <Map className="w-5 h-5" />,
           },
           {

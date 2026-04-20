@@ -3,7 +3,7 @@
 import { Suspense } from 'react';
 import { PlaceSelector } from '@/features/map';
 
-export default function PlacesPage() {
+export default function PlacesSelectPage() {
   return (
     <Suspense
       fallback={

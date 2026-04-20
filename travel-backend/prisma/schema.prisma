@@ -93,9 +93,12 @@ model lichtrinh_mau {
   ngaytao               DateTime?               @default(now()) @db.Timestamp(6)
   tong_khoangcach       Decimal?                @db.Decimal
   tong_thoigian         Int?
+  chi_phi_dukien        Decimal?                @db.Decimal(12, 2)
+  trang_thai            String?                 @default("APPROVED") @db.VarChar(20)
   nguoidung             nguoidung?              @relation(fields: [nguoidung_id], references: [nguoidung_id])
   sothich               sothich?                @relation(fields: [sothich_id], references: [sothich_id])
   lichtrinh_mau_diadiem lichtrinh_mau_diadiem[]
+  lichtrinh_mau_ngay    lichtrinh_mau_ngay[]
   tuyen_duong           tuyen_duong[]           @relation("lichtrinh_mau_routes")
 }
 
@@ -139,6 +142,20 @@ model lichtrinh_nguoidung_ngay {
   diem_ketthuc_lat       Float?
   diem_ketthuc_lng       Float?
   lichtrinh_nguoidung    lichtrinh_nguoidung @relation(fields: [lichtrinh_nguoidung_id], references: [lichtrinh_nguoidung_id], onDelete: Cascade)
+}
+
+model lichtrinh_mau_ngay {
+  id               Int            @id @default(autoincrement())
+  lichtrinh_mau_id Int
+  ngay_thu_may     Int            @default(1)
+  gio_batdau       String?        @db.VarChar(50)
+  diem_batdau_ten  String?        @db.VarChar(255)
+  diem_batdau_lat  Float?
+  diem_batdau_lng  Float?
+  diem_ketthuc_ten String?        @db.VarChar(255)
+  diem_ketthuc_lat Float?
+  diem_ketthuc_lng Float?
+  lichtrinh_mau    lichtrinh_mau  @relation(fields: [lichtrinh_mau_id], references: [lichtrinh_mau_id], onDelete: Cascade)
 }
 
 model lichtrinh_nguoidung_diadiem {

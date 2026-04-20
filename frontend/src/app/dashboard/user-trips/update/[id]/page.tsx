@@ -6,8 +6,8 @@ import { ChevronLeft, Sparkles, Map, Home, Edit3 } from "lucide-react";
 import LocalItineraryBuilder from "@/components/LocalItineraryBuilder";
 
 /**
- * Page: /local/builder/[id]
- * Chỉnh sửa lịch trình Local - Full Navigation & Pixel Fix
+ * Page: /dashboard/my-trips/update/[id]
+ * Chỉnh sửa lịch trình cá nhân - Full Navigation & Pixel Fix
  */
 export default function LocalBuilderEditPage() {
   const router = useRouter();
@@ -18,8 +18,8 @@ export default function LocalBuilderEditPage() {
   const fromSource = searchParams?.get('from');
 
   // Xác định link quay lại dựa trên nguồn
-  const backLink = fromSource === 'dashboard' ? '/dashboard/my-trips' : '/local';
-  const backLabel = fromSource === 'dashboard' ? 'Quản lý lịch trình' : 'Trình quản lý Local';
+  const backLink = fromSource === 'locals' ? '/dashboard/locals' : '/dashboard/user-trips';
+  const backLabel = fromSource === 'locals' ? 'Quản lý Local' : 'Quản lý lịch trình';
 
   return (
     <main className="min-h-screen bg-white text-slate-900 font-sans selection:bg-indigo-100 relative">

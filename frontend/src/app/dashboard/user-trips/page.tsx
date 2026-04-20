@@ -481,7 +481,7 @@ export default function MyTripsPage() {
 
                       {/* Edit */}
                       <Link
-                        href={`/local/builder/${it.lichtrinh_nguoidung_id}?from=dashboard`}
+                        href={`/dashboard/user-trips/update/${it.lichtrinh_nguoidung_id}`}
                         className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-xs font-semibold shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all"
                       >
                         <Edit3 className="w-3.5 h-3.5" />

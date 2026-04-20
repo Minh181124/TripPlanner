@@ -10,7 +10,7 @@ import apiClient from '@/shared/api/apiClient';
 import type { PlaceItem, MultiDayItinerary, DayItinerary } from '@/features/itinerary';
 
 // ----------------------------------------------------------------------------
-// Map server response → MultiDayItinerary
+// Map server response → MultiDayItinerary (cho lịch trình mẫu)
 // ----------------------------------------------------------------------------
 
 interface ServerPlace {
@@ -31,17 +31,6 @@ interface ServerPlace {
   } | null;
 }
 
-interface ServerDayConfig {
-  ngay_thu_may: number;
-  gio_batdau: string | null;
-  diem_batdau_ten: string | null;
-  diem_batdau_lat: number | null;
-  diem_batdau_lng: number | null;
-  diem_ketthuc_ten: string | null;
-  diem_ketthuc_lat: number | null;
-  diem_ketthuc_lng: number | null;
-}
-
 /** Convert DB Time value (Date object or "HH:mm:ss") → "HH:mm" string */
 function parseDbTime(val: string | Date | null): string | undefined {
   if (!val) return undefined;
@@ -50,13 +39,12 @@ function parseDbTime(val: string | Date | null): string | undefined {
     const m = String(val.getUTCMinutes()).padStart(2, '0');
     return `${h}:${m}`;
   }
-  // "HH:mm:ss" string
   return String(val).substring(0, 5);
 }
 
 function mapServerToItinerary(server: any): MultiDayItinerary {
-  const serverPlaces: ServerPlace[] = server.lichtrinh_nguoidung_diadiem ?? [];
-  const serverDayConfigs: ServerDayConfig[] = server.lichtrinh_nguoidung_ngay ?? [];
+  const serverPlaces: ServerPlace[] = server.lichtrinh_mau_diadiem ?? [];
+  const serverDayConfigs: any[] = server.lichtrinh_mau_ngay ?? [];
 
   // Group places by ngay_thu_may
   const dayMap = new Map<number, PlaceItem[]>();
@@ -71,7 +59,7 @@ function mapServerToItinerary(server: any): MultiDayItinerary {
     const stay = sp.thoiluong ?? 60;
 
     dayMap.get(day)!.push({
-      id: sp.id, // Bổ sung ID để nút Gắn vé hoạt động
+      id: sp.id,
       instanceId: `server-${sp.id}-${crypto.randomUUID()}`,
       diadiem_id: dd.diadiem_id,
       place_id: dd.google_place_id,
@@ -96,7 +84,7 @@ function mapServerToItinerary(server: any): MultiDayItinerary {
   const maxDay = dayMap.size > 0 ? Math.max(...dayMap.keys()) : 1;
 
   // Build day config lookup
-  const dayConfigMap = new Map<number, ServerDayConfig>();
+  const dayConfigMap = new Map<number, any>();
   for (const dc of serverDayConfigs) dayConfigMap.set(dc.ngay_thu_may, dc);
 
   const days: DayItinerary[] = Array.from({ length: maxDay }, (_, i) => {
@@ -120,11 +108,10 @@ function mapServerToItinerary(server: any): MultiDayItinerary {
   });
 
   return {
-    id: server.lichtrinh_nguoidung_id,
+    id: server.lichtrinh_mau_id,
     tieude: server.tieude ?? '',
+    mota: server.mota ?? '',
     so_ngay: maxDay,
-    ngaybatdau: server.ngaybatdau ?? undefined,
-    ngayketthuc: server.ngayketthuc ?? undefined,
     days,
     currentDay: 1,
     isDraft: false,
@@ -135,18 +122,24 @@ function mapServerToItinerary(server: any): MultiDayItinerary {
 // Component
 // ----------------------------------------------------------------------------
 
-interface MultiDayPlannerProps {
+interface SampleTripPlannerProps {
   editId?: number;
+  /** true = Admin (không cần duyệt), false = Local (cần duyệt) */
+  isAdmin?: boolean;
 }
 
-export function MultiDayPlanner({ editId }: MultiDayPlannerProps) {
+export function SampleTripPlanner({ editId, isAdmin = false }: SampleTripPlannerProps) {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
-  const { itinerary, validateItineraryTitle, validateAllDaysHavePlaces, setIsLoading, loadItinerary, resetItinerary } = useItinerary();
+  const { itinerary, validateItineraryTitle, validateAllDaysHavePlaces, setIsLoading, loadItinerary, resetItinerary, updateItineraryTitle } = useItinerary();
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [step, setStep] = useState<'timeline' | 'details'>('timeline');
   const [loadingEdit, setLoadingEdit] = useState(!!editId);
+
+  // Thêm fields đặc biệt cho lịch trình mẫu
+  const [moTa, setMoTa] = useState('');
+  const [chiPhiDuKien, setChiPhiDuKien] = useState('');
 
   // Handle component mount (Create vs Edit vs Returning from Place Selector)
   useEffect(() => {
@@ -155,7 +148,7 @@ export function MultiDayPlanner({ editId }: MultiDayPlannerProps) {
     if (fromSelector) {
       // Delay removal to survive React StrictMode's double mount
       setTimeout(() => sessionStorage.removeItem('fromPlaceSelector'), 500);
-      setLoadingEdit(false);
+      setLoadingEdit(false); // Make sure loading spinner hides
       return;
     }
 
@@ -164,15 +157,32 @@ export function MultiDayPlanner({ editId }: MultiDayPlannerProps) {
       resetItinerary();
     } else {
       setLoadingEdit(true);
-      apiClient
-        .get(`/lichtrinh-nguoidung/${editId}`)
+      apiClient.get(`/lichtrinh-mau/${editId}`)
         .then((res: any) => {
-          const data = res?.data?.data ?? res?.data ?? res;
-          loadItinerary(mapServerToItinerary(data));
+          // apiClient interceptor already unwraps TransformInterceptor — res IS the data
+          const raw = res?.data?.data ?? res?.data ?? res;
+          if (!raw || typeof raw !== 'object') {
+            console.error('[SampleTripPlanner] Unexpected API response shape:', res);
+            setSaveError('Không thể tải lịch trình mẫu.');
+            return;
+          }
+          loadItinerary(mapServerToItinerary(raw));
+          setMoTa(raw.mota || '');
+          
+          let parsedCost = '';
+          if (raw.chi_phi_dukien !== null && raw.chi_phi_dukien !== undefined) {
+             if (typeof raw.chi_phi_dukien === 'object' && raw.chi_phi_dukien.d && Array.isArray(raw.chi_phi_dukien.d)) {
+               // Handle Prisma Decimal
+               parsedCost = String(raw.chi_phi_dukien.d.join(''));
+             } else {
+               parsedCost = String(raw.chi_phi_dukien);
+             }
+          }
+          setChiPhiDuKien(parsedCost);
         })
         .catch((err: any) => {
-          console.error('[MultiDayPlanner] Load edit error:', err);
-          setSaveError('Không thể tải lịch trình. Vui lòng thử lại.');
+          console.error('[SampleTripPlanner] Load edit error:', err);
+          setSaveError('Không thể tải lịch trình mẫu. Vui lòng thử lại.');
         })
         .finally(() => setLoadingEdit(false));
     }
@@ -184,7 +194,7 @@ export function MultiDayPlanner({ editId }: MultiDayPlannerProps) {
     if (!isAuthLoading) {
       if (!isAuthenticated) {
         router.push('/login');
-      } else if (user?.vaitro !== 'admin' && user?.vaitro !== 'local' && user?.vaitro !== 'user') {
+      } else if (user?.vaitro !== 'admin' && user?.vaitro !== 'local') {
         alert('Bạn không có quyền truy cập vào trang này.');
         router.push('/dashboard');
       }
@@ -205,6 +215,9 @@ export function MultiDayPlanner({ editId }: MultiDayPlannerProps) {
 
   const handleBackToTimeline = () => setStep('timeline');
 
+  // Xác định URL quay lại
+  const backUrl = isAdmin ? '/dashboard/manage-sampletrips' : '/dashboard/locals-trips';
+
   const handleSave = async () => {
     if (isSaving) return;
 
@@ -220,7 +233,6 @@ export function MultiDayPlanner({ editId }: MultiDayPlannerProps) {
 
       const flatPlaces = itinerary.days.flatMap((day) =>
         day.places.map((place) => ({
-          id: place.id, // Gửi ID để Backend giữ lại liên kết vé
           mapboxPlaceId: place.place_id,
           ten: place.ten,
           diachi: place.diachi || null,
@@ -229,7 +241,6 @@ export function MultiDayPlanner({ editId }: MultiDayPlannerProps) {
           ghichu: place.ghichu || '',
           thoiluong: place.stayDuration ?? place.thoiluong ?? null,
           ngay_thu_may: day.ngay_thu_may,
-          thoigian_den: place.arrivalTime || null,
         })),
       );
 
@@ -244,37 +255,31 @@ export function MultiDayPlanner({ editId }: MultiDayPlannerProps) {
         diem_ketthuc_lng: day.endLocation?.lng || null,
       }));
 
+      // Không có ngaybatdau, ngayketthuc — thêm mota và chi_phi_dukien
       const saveData = {
         tieude: itinerary.tieude,
-        ngaybatdau: itinerary.ngaybatdau ? new Date(itinerary.ngaybatdau).toISOString().split('T')[0] : undefined,
-        ngayketthuc: itinerary.ngayketthuc ? new Date(itinerary.ngayketthuc).toISOString().split('T')[0] : undefined,
-        trangthai: 'planning',
+        mota: moTa || null,
+        chi_phi_dukien: chiPhiDuKien ? parseFloat(chiPhiDuKien) : null,
+        thoigian_dukien: `${itinerary.so_ngay} ngày`,
         places: flatPlaces,
         dayConfigs,
       };
 
-      let savedId: number | undefined;
-
       if (editId) {
-        // Update existing
-        const response = await apiClient.put(`/lichtrinh-nguoidung/${editId}`, saveData);
-        const responseData = response?.data?.data ?? response?.data ?? response;
-        savedId = responseData?.lichtrinh_nguoidung_id ?? responseData?.id ?? editId;
+        const endpoint = isAdmin ? `/lichtrinh-mau/admin/${editId}` : `/lichtrinh-mau/${editId}`;
+        await apiClient.put(endpoint, saveData);
       } else {
-        // Create new
-        const response = await apiClient.post('/lichtrinh-nguoidung', saveData);
-        const responseData = response?.data?.data ?? response?.data ?? response;
-        savedId = responseData?.lichtrinh_nguoidung_id ?? responseData?.id;
+        await apiClient.post('/lichtrinh-mau', saveData);
       }
 
-      if (savedId) {
-        alert(editId ? 'Cập nhật lịch trình thành công! ✓' : 'Lưu kế hoạch thành công! ✓');
-        router.push('/dashboard/user-trips');
-      } else {
-        throw new Error('Không nhận được ID kế hoạch từ server');
-      }
+      const successMsg = editId
+        ? (isAdmin ? 'Cập nhật lịch trình mẫu thành công! ✓' : 'Đã gửi cập nhật, chờ Admin duyệt! ✓')
+        : (isAdmin ? 'Tạo lịch trình mẫu thành công! ✓' : 'Đã gửi lịch trình mẫu, chờ Admin duyệt! ✓');
+
+      alert(successMsg);
+      router.push(backUrl);
     } catch (error: any) {
-      const errorMsg = error?.response?.data?.message || error?.message || 'Có lỗi khi lưu kế hoạch';
+      const errorMsg = error?.response?.data?.message || error?.message || 'Có lỗi khi lưu';
       console.error('Save error:', error);
       setSaveError(errorMsg);
       alert(`Lỗi: ${errorMsg}`);
@@ -290,15 +295,15 @@ export function MultiDayPlanner({ editId }: MultiDayPlannerProps) {
         <div className="text-center space-y-4">
           <Loader className="w-10 h-10 text-indigo-600 animate-spin mx-auto" />
           <p className="text-slate-600 font-medium">
-            {isAuthLoading ? 'Đang xác thực...' : 'Đang tải lịch trình...'}
+            {isAuthLoading ? 'Đang xác thực...' : 'Đang tải lịch trình mẫu...'}
           </p>
         </div>
       </div>
     );
   }
 
-  if (!isAuthenticated || (user?.vaitro !== 'admin' && user?.vaitro !== 'local' && user?.vaitro !== 'user')) {
-    return null; // Will redirect via useEffect
+  if (!isAuthenticated || (user?.vaitro !== 'admin' && user?.vaitro !== 'local')) {
+    return null;
   }
 
   return (
@@ -310,7 +315,7 @@ export function MultiDayPlanner({ editId }: MultiDayPlannerProps) {
             <div className="flex items-center gap-2">
               {editId && <Pencil className="w-5 h-5 text-indigo-500" />}
               <h1 className="text-2xl font-bold text-slate-900">
-                {editId ? 'Chỉnh sửa lịch trình' : 'Kế hoạch du lịch'}
+                {editId ? 'Chỉnh sửa lịch trình mẫu' : 'Tạo lịch trình mẫu'}
               </h1>
             </div>
 
@@ -398,13 +403,55 @@ export function MultiDayPlanner({ editId }: MultiDayPlannerProps) {
 
       {/* Content */}
       {step === 'timeline' ? (
-        <TimelineEditorWithMap />
+        <TimelineEditorWithMap hideDateField />
       ) : (
-        <PlanDetailEditor
-          onBack={handleBackToTimeline}
-          onFinish={handleSave}
-          isSaving={isSaving}
-        />
+        <>
+          {/* Panel Mô tả + Chi phí — hiển thị ở bước Ghi chú */}
+          <div className="bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-100">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-6">
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <h3 className="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <Save className="w-5 h-5 text-indigo-500" />
+                  Thông tin lịch trình mẫu
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Mô tả chuyến đi */}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                      Mô tả chuyến đi
+                    </label>
+                    <textarea
+                      value={moTa}
+                      onChange={(e) => setMoTa(e.target.value)}
+                      placeholder="Chia sẻ trải nghiệm, lưu ý cho người tham gia..."
+                      rows={3}
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition-all resize-none"
+                    />
+                  </div>
+                  {/* Chi phí dự kiến */}
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                      Chi phí dự kiến (VNĐ)
+                    </label>
+                    <input
+                      type="number"
+                      value={chiPhiDuKien}
+                      onChange={(e) => setChiPhiDuKien(e.target.value)}
+                      placeholder="VD: 5000000"
+                      min={0}
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <PlanDetailEditor
+            onBack={handleBackToTimeline}
+            onFinish={handleSave}
+            isSaving={isSaving}
+          />
+        </>
       )}
     </div>
   );

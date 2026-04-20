@@ -1,14 +1,72 @@
+import { Type } from 'class-transformer';
+import { IsString, IsOptional, IsArray, ValidateNested, IsNumber } from 'class-validator';
+
+/**
+ * Cấu hình mỗi ngày (điểm bắt đầu, kết thúc, giờ khởi hành)
+ */
+export class LichtrinhMauDayConfigDto {
+  @IsNumber()
+  ngay_thu_may: number;
+
+  @IsOptional()
+  @IsString()
+  gio_batdau?: string | null;
+
+  @IsOptional()
+  @IsString()
+  diem_batdau_ten?: string | null;
+
+  @IsOptional()
+  @IsNumber()
+  diem_batdau_lat?: number | null;
+
+  @IsOptional()
+  @IsNumber()
+  diem_batdau_lng?: number | null;
+
+  @IsOptional()
+  @IsString()
+  diem_ketthuc_ten?: string | null;
+
+  @IsOptional()
+  @IsNumber()
+  diem_ketthuc_lat?: number | null;
+
+  @IsOptional()
+  @IsNumber()
+  diem_ketthuc_lng?: number | null;
+}
+
 /**
  * DTO cho một địa điểm trong lịch trình mẫu
  */
 export class LichtrinhMauPlaceItemDto {
+  @IsString()
   mapboxPlaceId: string;
+
+  @IsString()
   ten: string;
+
+  @IsOptional()
+  @IsString()
   diachi?: string | null;
+
+  @IsNumber()
   lat: number;
+
+  @IsNumber()
   lng: number;
+
+  @IsOptional()
+  @IsString()
   ghichu?: string | null;
+
+  @IsOptional()
+  @IsNumber()
   thoiluong?: number | null;
+
+  @IsOptional()
+  @IsNumber()
   ngay_thu_may?: number;
 }
 
@@ -16,14 +74,31 @@ export class LichtrinhMauPlaceItemDto {
  * DTO cho tuyến đường (chặng) giữa hai điểm
  */
 export class TuyenDuongMauDto {
+  @IsNumber()
   diadiem_batdau_id: number;
+
+  @IsNumber()
   diadiem_ketthuc_id: number;
-  polyline: string; // Chuỗi mã hóa polyline
-  phuongtien: string; // car, walk, bike, bus, etc.
-  tong_khoangcach: number; // Quãng đường (meter hoặc km)
-  tong_thoigian: number; // Thời gian (giây)
-  ngay_thu_may?: number; // Ngày thứ mấy
-  thutu?: number; // Thứ tự chặng trong ngày
+
+  @IsString()
+  polyline: string;
+
+  @IsString()
+  phuongtien: string;
+
+  @IsNumber()
+  tong_khoangcach: number;
+
+  @IsNumber()
+  tong_thoigian: number;
+
+  @IsOptional()
+  @IsNumber()
+  ngay_thu_may?: number;
+
+  @IsOptional()
+  @IsNumber()
+  thutu?: number;
 }
 
 /**
@@ -31,12 +106,41 @@ export class TuyenDuongMauDto {
  * POST /lichtrinh-mau
  */
 export class CreateLichtrinhMauDto {
+  @IsString()
   tieude: string;
+
+  @IsOptional()
+  @IsString()
   mota?: string | null;
+
+  @IsOptional()
+  @IsNumber()
   sothich_id?: number | null;
+
+  @IsOptional()
+  @IsString()
   thoigian_dukien?: string | null;
+
+  @IsOptional()
+  @IsNumber()
+  chi_phi_dukien?: number | null;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => LichtrinhMauPlaceItemDto)
   places: LichtrinhMauPlaceItemDto[];
-  tuyenDuongs?: TuyenDuongMauDto[]; // Danh sách các tuyến đường/chặng
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TuyenDuongMauDto)
+  tuyenDuongs?: TuyenDuongMauDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => LichtrinhMauDayConfigDto)
+  dayConfigs?: LichtrinhMauDayConfigDto[];
 }
 
 /**
@@ -44,10 +148,41 @@ export class CreateLichtrinhMauDto {
  * PUT /lichtrinh-mau/:id
  */
 export class UpdateLichtrinhMauDto {
+  @IsOptional()
+  @IsString()
   tieude?: string;
+
+  @IsOptional()
+  @IsString()
   mota?: string | null;
+
+  @IsOptional()
+  @IsNumber()
   sothich_id?: number | null;
+
+  @IsOptional()
+  @IsString()
   thoigian_dukien?: string | null;
+
+  @IsOptional()
+  @IsNumber()
+  chi_phi_dukien?: number | null;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => LichtrinhMauPlaceItemDto)
   places?: LichtrinhMauPlaceItemDto[];
-  tuyenDuongs?: TuyenDuongMauDto[]; // Danh sách các tuyến đường/chặng
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TuyenDuongMauDto)
+  tuyenDuongs?: TuyenDuongMauDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => LichtrinhMauDayConfigDto)
+  dayConfigs?: LichtrinhMauDayConfigDto[];
 }

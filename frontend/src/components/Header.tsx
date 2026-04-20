@@ -47,7 +47,7 @@ export function Header() {
     const lastSegment = segments[segments.length - 1];
     const breadcrumbMap: Record<string, string> = {
       dashboard: 'Dashboard',
-      'my-trips': 'Chuyến đi của tôi',
+      'user-trips': 'Chuyến đi của tôi',
       'my-tours': 'Các tour của tôi',
       'saved-places': 'Địa điểm yêu thích',
       'create-tour': 'Tạo tour',

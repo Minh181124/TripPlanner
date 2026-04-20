@@ -53,7 +53,12 @@ interface StartLocationSearchResult {
   google_place_id?: string;
 }
 
-export function TimelineEditorWithMap() {
+interface TimelineEditorWithMapProps {
+  /** Hide the date picker field (e.g. for sample trips which don't have start/end dates) */
+  hideDateField?: boolean;
+}
+
+export function TimelineEditorWithMap({ hideDateField = false }: TimelineEditorWithMapProps = {}) {
   const router = useRouter();
   const { 
     itinerary, 
@@ -634,16 +639,18 @@ export function TimelineEditorWithMap() {
                 className="w-full px-4 py-2.5 bg-white border-2 border-indigo-100 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none text-slate-900 text-sm font-bold shadow-sm transition-all hover:border-indigo-300"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-600 mb-1 uppercase tracking-wider">Ngày khởi hành</label>
-                <input
-                  type="date"
-                  value={ngaybatdau}
-                  onChange={(e) => handleStartDateChange(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none text-slate-900 text-xs shadow-sm transition-all hover:border-slate-300"
-                />
-              </div>
+            <div className={`grid ${hideDateField ? 'grid-cols-1' : 'grid-cols-2'} gap-3`}>
+              {!hideDateField && (
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-600 mb-1 uppercase tracking-wider">Ngày khởi hành</label>
+                  <input
+                    type="date"
+                    value={ngaybatdau}
+                    onChange={(e) => handleStartDateChange(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none text-slate-900 text-xs shadow-sm transition-all hover:border-slate-300"
+                  />
+                </div>
+              )}
               <div>
                 <label className="block text-[11px] font-semibold text-slate-600 mb-1 uppercase tracking-wider">Thời gian</label>
                 <select
@@ -794,7 +801,10 @@ export function TimelineEditorWithMap() {
         <div className="flex-1 overflow-y-auto p-4">
           {!hasPlaces ? (
             <button
-              onClick={() => router.push('/local/places')}
+              onClick={() => {
+                  sessionStorage.setItem('fromPlaceSelector', 'true');
+                  router.push('/dashboard/places/select');
+                }}
               className="w-full py-8 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-indigo-50/50 to-blue-50/50 rounded-2xl border border-dashed border-indigo-300/50 hover:border-indigo-400 backdrop-blur-sm transition-all group"
             >
               <Plus className="w-6 h-6 text-indigo-600 group-hover:scale-110 transition-transform" />
@@ -1005,7 +1015,10 @@ export function TimelineEditorWithMap() {
 
               {/* Add More Places Button */}
               <button
-                onClick={() => router.push('/local/places')}
+                onClick={() => {
+                  sessionStorage.setItem('fromPlaceSelector', 'true');
+                  router.push('/dashboard/places/select');
+                }}
                 className="w-full mt-6 py-3 flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-100/50 to-blue-100/50 hover:from-indigo-100 hover:to-blue-100 rounded-2xl border border-indigo-200/50 backdrop-blur-sm transition-all text-indigo-700 text-sm font-semibold"
               >
                 <Plus className="w-4 h-4" />
