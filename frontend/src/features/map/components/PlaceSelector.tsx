@@ -176,6 +176,8 @@ export function PlaceSelector() {
       setSelectedPlace(null);
       alert(`✓ Đã thêm ${newPlace.ten} vào ngày ${itinerary.currentDay}`);
 
+      // Signal back that we came from the selector to avoid resetting the itinerary
+      sessionStorage.setItem('fromPlaceSelector', 'true');
       setTimeout(() => router.back(), 500);
     } catch (err) {
       console.error('Error adding place:', err);
