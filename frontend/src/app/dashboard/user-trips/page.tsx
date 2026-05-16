@@ -24,7 +24,6 @@ import {
   Route,
   AlertTriangle,
   X,
-  Ticket as TicketIcon,
 } from 'lucide-react';
 import { useAuth } from '@/features/auth';
 import apiClient from '@/shared/api/apiClient';
@@ -57,7 +56,6 @@ interface Itinerary {
   trangthai: string | null;
   ngaytao: string | null;
   lichtrinh_nguoidung_diadiem?: ItineraryPlace[];
-  ticketsCount?: number;
 }
 
 type SortField = 'ngaytao' | 'tieude';
@@ -430,12 +428,7 @@ export default function MyTripsPage() {
                         <MapPin className="w-3.5 h-3.5" />
                         {placeCount} địa điểm
                       </span>
-                      {it.ticketsCount !== undefined && it.ticketsCount > 0 && (
-                        <span className="flex items-center gap-1 text-emerald-600 font-bold">
-                          <TicketIcon className="w-3.5 h-3.5" />
-                          {it.ticketsCount} vé
-                        </span>
-                      )}
+
                     </div>
 
                     {/* Date range */}

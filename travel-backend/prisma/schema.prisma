@@ -25,7 +25,13 @@ model nguoidung {
   lichtrinh_nguoidung lichtrinh_nguoidung[]
   luu_diadiem         luu_diadiem[]
   nguoidung_sothich   nguoidung_sothich[]
-  ve_nguoidung        ve_nguoidung[]
+  baiviet             baiviet[]
+  tuongtac            tuongtac[]
+  binhluan            binhluan[]
+  thongbao_nhan       thongbao[]            @relation("received_notifications")
+  thongbao_tao        thongbao[]            @relation("triggered_notifications")
+  follows             follow[]              @relation("follower")
+  followedBy          follow[]              @relation("following")
 }
 
 model diadiem {
@@ -131,6 +137,7 @@ model lichtrinh_nguoidung {
   lichtrinh_nguoidung_diadiem lichtrinh_nguoidung_diadiem[]
   lichtrinh_nguoidung_ngay    lichtrinh_nguoidung_ngay[]
   tuyen_duong                 tuyen_duong[]                 @relation("lichtrinh_nguoidung_routes")
+  baiviet                     baiviet?
 }
 
 model lichtrinh_nguoidung_ngay {
@@ -172,7 +179,6 @@ model lichtrinh_nguoidung_diadiem {
   ngay_thu_may           Int                    @default(1)
   diadiem                diadiem?               @relation(fields: [diadiem_id], references: [diadiem_id], onDelete: Cascade)
   lichtrinh_nguoidung    lichtrinh_nguoidung?   @relation(fields: [lichtrinh_nguoidung_id], references: [lichtrinh_nguoidung_id], onDelete: Cascade)
-  ve_diadiem_lichtrinh   ve_diadiem_lichtrinh[]
 }
 
 model tuyen_duong {
@@ -253,28 +259,69 @@ model spatial_ref_sys {
   proj4text String? @db.VarChar(2048)
 }
 
-model ve_nguoidung {
-  ve_id         Int                    @id @default(autoincrement())
-  nguoidung_id  Int
-  tieu_de       String                 @db.VarChar(255)
-  loai_ve       String?                @db.VarChar(50)
-  ngay_su_dung  DateTime?              @db.Date
-  ghi_chu       String?
-  file_url      String?
-  kieu_file     String?                @db.VarChar(100)
-  cloudinary_id String?                @db.VarChar(255)
-  trang_thai    Boolean                @default(true)
-  ngaytao       DateTime               @default(now()) @db.Timestamp(6)
-  chi_tiet      Json?
-  ve_diadiem    ve_diadiem_lichtrinh[]
-  nguoidung     nguoidung              @relation(fields: [nguoidung_id], references: [nguoidung_id], onDelete: Cascade)
+
+model baiviet {
+  baiviet_id             Int                 @id @default(autoincrement())
+  nguoidung_id           Int
+  lichtrinh_nguoidung_id Int?                @unique
+  tieude                 String              @db.VarChar(255)
+  noidung                String?
+  hinhanh_cover          String?
+  trangthai_lichtrinh    String              @default("planning") @db.VarChar(50)
+  luotthich              Int                 @default(0)
+  ngaytao                DateTime            @default(now()) @db.Timestamp(6)
+  
+  nguoidung              nguoidung           @relation(fields: [nguoidung_id], references: [nguoidung_id], onDelete: Cascade)
+  lichtrinh              lichtrinh_nguoidung? @relation(fields: [lichtrinh_nguoidung_id], references: [lichtrinh_nguoidung_id], onDelete: SetNull)
+  tuongtac               tuongtac[]
+  binhluan               binhluan[]
+  thongbao               thongbao[]
 }
 
-model ve_diadiem_lichtrinh {
-  id                             Int                         @id @default(autoincrement())
-  ve_id                          Int
-  lichtrinh_nguoidung_diadiem_id Int
-  ngaytao                        DateTime                    @default(now()) @db.Timestamp(6)
-  lichtrinh_nguoidung_diadiem    lichtrinh_nguoidung_diadiem @relation(fields: [lichtrinh_nguoidung_diadiem_id], references: [id], onDelete: Cascade)
-  ve                             ve_nguoidung                @relation(fields: [ve_id], references: [ve_id], onDelete: Cascade)
+model tuongtac {
+  tuongtac_id  Int      @id @default(autoincrement())
+  nguoidung_id Int
+  baiviet_id   Int
+  ngaytao      DateTime @default(now())
+  
+  nguoidung    nguoidung @relation(fields: [nguoidung_id], references: [nguoidung_id], onDelete: Cascade)
+  baiviet      baiviet   @relation(fields: [baiviet_id], references: [baiviet_id], onDelete: Cascade)
+
+  @@unique([nguoidung_id, baiviet_id])
+}
+
+model binhluan {
+  binhluan_id  Int      @id @default(autoincrement())
+  nguoidung_id Int
+  baiviet_id   Int
+  noidung      String
+  ngaytao      DateTime @default(now())
+  
+  nguoidung    nguoidung @relation(fields: [nguoidung_id], references: [nguoidung_id], onDelete: Cascade)
+  baiviet      baiviet   @relation(fields: [baiviet_id], references: [baiviet_id], onDelete: Cascade)
+}
+
+model thongbao {
+  thongbao_id  Int      @id @default(autoincrement())
+  nguoidung_id Int      
+  tacnhan_id   Int      
+  baiviet_id   Int?
+  loai         String   @db.VarChar(50)
+  noidung      String?
+  da_xem       Boolean  @default(false)
+  ngaytao      DateTime @default(now())
+  
+  nguoidung    nguoidung @relation("received_notifications", fields: [nguoidung_id], references: [nguoidung_id], onDelete: Cascade)
+  tacnhan      nguoidung @relation("triggered_notifications", fields: [tacnhan_id], references: [nguoidung_id], onDelete: Cascade)
+  baiviet      baiviet?  @relation(fields: [baiviet_id], references: [baiviet_id], onDelete: Cascade)
+}
+
+model follow {
+  follower_id  Int
+  following_id Int
+  
+  follower     nguoidung @relation("follower", fields: [follower_id], references: [nguoidung_id], onDelete: Cascade)
+  following    nguoidung @relation("following", fields: [following_id], references: [nguoidung_id], onDelete: Cascade)
+
+  @@id([follower_id, following_id])
 }

@@ -21,7 +21,6 @@ import {
   Settings,
   UserCheck,
   MessageSquareWarning,
-  Ticket,
 } from 'lucide-react';
 import { useAuth } from '@/features/auth';
 
@@ -69,6 +68,11 @@ export function Sidebar() {
    */
   const getMenuItems = (): MenuItem[] => {
     const commonItems: MenuItem[] = [
+      {
+        label: 'Cộng đồng',
+        href: '/explore',
+        icon: <Compass className="w-5 h-5" />,
+      },
       {
         label: 'Hồ sơ',
         href: '/dashboard/profile',
@@ -183,11 +187,6 @@ export function Sidebar() {
             label: 'Chuyến đi của tôi',
             href: '/dashboard/user-trips',
             icon: <Map className="w-5 h-5" />,
-          },
-          {
-            label: 'Kho vé',
-            href: '/dashboard/tickets',
-            icon: <Ticket className="w-5 h-5" />,
           },
           {
             label: 'Địa điểm yêu thích',

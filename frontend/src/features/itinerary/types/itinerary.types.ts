@@ -67,6 +67,7 @@ export interface MultiDayItinerary {
   id?: number;
   tieude: string;
   mota?: string;
+  trangthai?: string;
   so_ngay: number;
   sothich_id?: number;
   ngaybatdau?: string | Date;

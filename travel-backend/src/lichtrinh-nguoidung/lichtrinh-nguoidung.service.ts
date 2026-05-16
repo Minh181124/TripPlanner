@@ -204,7 +204,6 @@ export class LichtrinhNguoidungService {
                 diadiem: {
                   select: { ten: true }
                 },
-                ve_diadiem_lichtrinh: true
               },
               orderBy: { thutu: 'asc' },
             },
@@ -220,12 +219,8 @@ export class LichtrinhNguoidungService {
       ]);
 
       const formattedItineraries = itineraries.map((it: any) => {
-        const totalTickets = it.lichtrinh_nguoidung_diadiem?.reduce((sum: number, place: any) => {
-          return sum + (place.ve_diadiem_lichtrinh?.length || 0);
-        }, 0) || 0;
         return {
           ...it,
-          ticketsCount: totalTickets
         };
       });
 

@@ -26,13 +26,9 @@ export default function RegisterPage() {
    */
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
-      if (user?.vaitro === 'user') {
-        router.push('/');
-      } else {
-        router.push('/dashboard');
-      }
+      router.push('/explore');
     }
-  }, [isAuthenticated, authLoading, router, user]);
+  }, [isAuthenticated, authLoading, router]);
 
   /**
    * Xử lý đăng ký
@@ -65,11 +61,7 @@ export default function RegisterPage() {
       });
       
       // Redirect to correct page based on role
-      if (response.user.vaitro === 'user') {
-        router.push('/');
-      } else {
-        router.push('/dashboard');
-      }
+      router.push('/explore');
     } catch (err: any) {
       setError(err.message || 'Lỗi đăng ký. Vui lòng thử lại');
     } finally {

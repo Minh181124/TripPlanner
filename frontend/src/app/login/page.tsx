@@ -29,11 +29,9 @@ export default function LoginPage() {
    */
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
-      if (user?.vaitro) {
-        router.push("/dashboard");
-      }
+      router.push("/explore");
     }
-  }, [isAuthenticated, authLoading, router, user]);
+  }, [isAuthenticated, authLoading, router]);
 
   /**
    * Xử lý đăng nhập
